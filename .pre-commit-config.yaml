@@ -13,3 +13,8 @@ repos:
     rev: v1.56.2
     hooks:
       - id: golangci-lint
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-mod-tidy
+      - id: go-generate
