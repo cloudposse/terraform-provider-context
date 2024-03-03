@@ -1,0 +1,54 @@
+---
+layout: ""
+page_title: "Provider: Context"
+description: |-
+  Use the Cloud Posse Context provider create a common context for modules. This is useful when generating labels and
+  tags.
+---
+
+# Cloud Posse Context Provider
+
+Use the Cloud Posse Context provider to create a context that can be shared among the modules in your solution. You must
+configure the provider with the properties in the context before you can use it.
+
+Use the navigation to the left to read about the available data sources.
+
+## Example Usage
+
+```terraform
+terraform {
+  required_providers {
+    context = {
+      source  = "cloudposse/context"
+      version = "~> 0.1"
+    }
+  }
+}
+
+# Configure the Context Provider
+provider "context" {
+  properties = {
+    namespace = {}
+    tenant = {}
+    stage = {}
+    environment = {}
+  }
+
+  values = {
+    namespace = "acme"
+    tenant = "core"
+    stage = "prod"
+    environment = "uw2"
+  }
+}
+
+# Create a Label
+resource "context_label" "example" {
+}
+
+# Create Tags
+resource "context_tags" "example" {
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}
