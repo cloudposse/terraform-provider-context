@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type Property struct {
@@ -37,17 +35,6 @@ func (p *Property) Validate(value string) []error {
 	}
 
 	return errors
-}
-
-func (p *Property) ToFramework() FrameworkProperty {
-	return FrameworkProperty{
-		IncludeInTags:   types.BoolValue(p.IncludeInTags),
-		MaxLength:       types.Int64Value(int64(p.MaxLength)),
-		MinLength:       types.Int64Value(int64(p.MinLength)),
-		Required:        types.BoolValue(p.Required),
-		ValidationRegex: types.StringValue(p.ValidationRegex),
-	}
-
 }
 
 func validateRequired(required bool, value string, propertyName string) error {

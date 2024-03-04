@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	model "github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,7 +11,10 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &ConfigDataSource{}
+var (
+	_ datasource.DataSource              = &ConfigDataSource{}
+	_ datasource.DataSourceWithConfigure = &ConfigDataSource{}
+)
 
 func NewConfigDataSource() datasource.DataSource {
 	return &ConfigDataSource{}
@@ -101,12 +103,12 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	// properties
 	properties := d.providerData.contextClient.GetProperties()
-	propMap := make(map[string]model.FrameworkProperty, len(properties))
+	propMap := make(map[string]FrameworkProperty, len(properties))
 	for _, v := range properties {
-		propMap[v.Name] = v.ToFramework()
+		propMap[v.Name] = FrameworkProperty{}.FromClientProperty(v)
 	}
 
-	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: model.FrameworkProperty{}.Types()}, propMap)
+	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: FrameworkProperty{}.Types()}, propMap)
 	resp.Diagnostics.Append(diag...)
 	if resp.Diagnostics.HasError() {
 		return

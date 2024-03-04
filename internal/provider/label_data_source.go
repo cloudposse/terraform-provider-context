@@ -4,14 +4,24 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudposse/terraform-provider-context/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &LabelDataSource{}
+var (
+	_ datasource.DataSource                     = &LabelDataSource{}
+	_ datasource.DataSourceWithConfigure        = &LabelDataSource{}
+	_ datasource.DataSourceWithConfigValidators = &LabelDataSource{}
+)
 
 func NewLabelDataSource() datasource.DataSource {
 	return &LabelDataSource{}
@@ -25,11 +35,13 @@ type LabelDataSource struct {
 // LabelDataSourceModel describes the data source data model.
 type LabelDataSourceModel struct {
 	Delimiter  types.String `tfsdk:"delimiter"`
+	Id         types.String `tfsdk:"id"`
+	MaxLength  types.Int64  `tfsdk:"max_length"`
 	Properties types.List   `tfsdk:"properties"`
 	Rendered   types.String `tfsdk:"rendered"`
 	Template   types.String `tfsdk:"template"`
+	Truncate   types.Bool   `tfsdk:"truncate"`
 	Values     types.Map    `tfsdk:"values"`
-	Id         types.String `tfsdk:"id"`
 }
 
 func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -46,6 +58,17 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				MarkdownDescription: "Delimiter to use when creating the label from properties. Conflicts with `template`.",
 				Optional:            true,
 			},
+			"id": schema.StringAttribute{
+				MarkdownDescription: "Label identifier",
+				Computed:            true,
+			},
+			"max_length": schema.Int64Attribute{
+				MarkdownDescription: "Maximum length of the label",
+				Optional:            true,
+				Validators: []validator.Int64{
+					int64validator.AtLeast(0),
+				},
+			},
 			"properties": schema.ListAttribute{
 				MarkdownDescription: "List of properties to use when creating the label. Conflicts with `template`.",
 				Optional:            true,
@@ -59,14 +82,14 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				MarkdownDescription: "Template to use when creating the label. Conflicts with `delimiter` and `properties`.",
 				Optional:            true,
 			},
+			"truncate": schema.BoolAttribute{
+				MarkdownDescription: "Truncate the label if it exceeds the maximum length. If false, an error will be returned if the label exceeds the maximum length.",
+				Optional:            true,
+			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "Map of values to override or add to the context when creating the label.",
 				Optional:            true,
 				ElementType:         types.StringType,
-			},
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Label identifier",
-				Computed:            true,
 			},
 		},
 	}
@@ -79,7 +102,6 @@ func (d *LabelDataSource) Configure(ctx context.Context, req datasource.Configur
 	}
 
 	providerData, ok := req.ProviderData.(*providerData)
-
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
@@ -91,11 +113,16 @@ func (d *LabelDataSource) Configure(ctx context.Context, req datasource.Configur
 	d.providerData = providerData
 }
 
-func (d *LabelDataSource) handleValidationErrors(resp *datasource.ReadResponse, errs []error) {
-	for _, err := range errs {
-		if err != nil {
-			resp.Diagnostics.AddError("Validation Error", err.Error())
-		}
+func (d *LabelDataSource) ConfigValidators(ctx context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.Conflicting(
+			path.MatchRoot("delimiter"),
+			path.MatchRoot("template"),
+		),
+		datasourcevalidator.Conflicting(
+			path.MatchRoot("properties"),
+			path.MatchRoot("template"),
+		),
 	}
 }
 
@@ -105,53 +132,68 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
-	localValues, diags := FromFrameworkMap[string](ctx, config.Values)
-	resp.Diagnostics.Append(diags...)
+	// Generate the label
+	resp.Diagnostics = append(resp.Diagnostics, readLabel(ctx, d.providerData.contextClient, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	localProperties, diags := FromFrameworkList[string](ctx, config.Properties)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var label string
-	if !config.Template.IsNull() {
-		localTemplate := config.Template.ValueString()
-		templatedLabel, errs := d.providerData.contextClient.GetTemplatedLabel(localTemplate, localValues)
-		d.handleValidationErrors(resp, errs)
-
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		label = templatedLabel
-	} else {
-		var localDelimiter *string
-		if !config.Delimiter.IsNull() {
-			localDelimiter = config.Delimiter.ValueStringPointer()
-		}
-
-		delimitedLabel, errs := d.providerData.contextClient.GetDelimitedLabel(localDelimiter, localProperties, localProperties, localValues)
-		d.handleValidationErrors(resp, errs)
-
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		label = delimitedLabel
-	}
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// Set other properties
 	config.Id = types.StringValue("Label-id")
-	config.Rendered = types.StringValue(label)
+
+	// Write to state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 
 	tflog.Trace(ctx, "create label data source")
+}
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+// processErrors iterates through a list of errors and adds them to the diagnostics.
+func processErrors(errs []error, diags *diag.Diagnostics) {
+	for _, err := range errs {
+		if err != nil {
+			diags.AddError("Validation Error", err.Error())
+		}
+	}
+}
+
+// readLabel deptermins the type of label to create and calls the appropriate method to create it.
+func readLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+	if !config.Template.IsNull() {
+		return readTemplatedLabel(ctx, client, config)
+	}
+	return readDelimitedLabel(ctx, client, config)
+}
+
+// readTemplatedLabel creates a label using a template.
+func readTemplatedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+	model, diags := templatedLabelModel{}.FromFramework(ctx, *config)
+	if diags.HasError() {
+		return diags
+	}
+
+	label, errs := client.GetTemplatedLabel(model.Template, model.Values, int(model.MaxLength), model.Truncate)
+	processErrors(errs, &diags)
+
+	if !diags.HasError() {
+		config.Rendered = types.StringValue(label)
+	}
+
+	return diags
+}
+
+// readDelimitedLabel creates a label using a delimiter.
+func readDelimitedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+	model, diags := delimitedLabelModel{}.FromFramework(ctx, *config)
+	if diags.HasError() {
+		return diags
+	}
+
+	label, errs := client.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, int(model.MaxLength), model.Truncate)
+	processErrors(errs, &diags)
+
+	if !diags.HasError() {
+		config.Rendered = types.StringValue(label)
+	}
+
+	return diags
 }

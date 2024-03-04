@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/cloudposse/terraform-provider-context/internal/client"
-	cc "github.com/cloudposse/terraform-provider-context/internal/client"
-	model "github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -32,12 +30,6 @@ type config struct {
 	Properties    types.Map    `tfsdk:"properties"`
 	PropertyOrder types.List   `tfsdk:"property_order"`
 	Values        types.Map    `tfsdk:"values"`
-}
-
-// providerData is returned from the provider's Configure method and is passed to each resource and data source in their
-// Configure methods.
-type providerData struct {
-	contextClient *client.Client
 }
 
 func (p *ContextProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -85,13 +77,13 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	// Convert config to native go types
-	properties := map[string]model.FrameworkProperty{}
+	properties := map[string]FrameworkProperty{}
 	resp.Diagnostics.Append(config.Properties.ElementsAs(ctx, &properties, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	clientProperties := []model.Property{}
+	clientProperties := []client.Property{}
 	for k, prop := range properties {
 
 		property, err := prop.ToModel(k)
@@ -123,7 +115,7 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 	})
 
 	// Create the context client
-	client, err := cc.NewClient(clientProperties, propertyOrder, values)
+	client, err := client.NewClient(clientProperties, propertyOrder, values)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create context client", err.Error())
 		return

@@ -2,26 +2,27 @@ package client
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strings"
 	"text/template"
 
-	model "github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/slice"
+	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 )
+
+type Client struct {
+	delimiter     string
+	enabled       bool
+	properties    []Property
+	propertyOrder []string
+	values        map[string]string
+}
 
 type DelmitedLabelOptions struct {
 	Delimiter  *string
 	Properties []string
 	Values     map[string]string
-}
-
-type Client struct {
-	delimiter     string
-	enabled       bool
-	properties    []model.Property
-	propertyOrder []string
-	values        map[string]string
 }
 
 // GetDelimiter returns the delimiter from the context.
@@ -46,7 +47,7 @@ func (c *Client) IsEnabled() bool {
 }
 
 // GetProperties returns the properties from the context.
-func (c *Client) GetProperties() []model.Property {
+func (c *Client) GetProperties() []Property {
 	return c.properties
 }
 
@@ -59,7 +60,7 @@ func (c *Client) ValidateProperties(values map[string]string) []error {
 }
 
 // GetPropertyNames returns the names of the properties from the context.
-func (c *Client) GetPropertyNames([]model.Property) []string {
+func (c *Client) GetPropertyNames([]Property) []string {
 	names := []string{}
 	for _, p := range c.properties {
 		names = append(names, p.Name)
@@ -119,9 +120,20 @@ func (c *Client) getOrderedValues(propertyOrder []string, values map[string]stri
 	return orderedValues
 }
 
+func getTruncatedLabel(label string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
+	if maxLength > 0 && len(label) > maxLength {
+		if truncateIfExceedsMaxLength {
+			label = stringHelpers.TruncateWithHash(label, maxLength)
+		} else {
+			return "", []error{fmt.Errorf("label %s exceeds maximum length of %d", label, maxLength)}
+		}
+	}
+	return label, nil
+}
+
 // GetDelimitedLabel returns a delimited label based on the properties and values in the context and overridden by the
 // delimiter, properties and values passed into the function.
-func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string) (string, []error) {
+func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
 
 	validationErrors := c.ValidateProperties(mergedValues)
@@ -140,12 +152,14 @@ func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, prope
 	}
 	orderedValues := c.getOrderedValues(filteredPropertyOrder, mergedValues)
 
-	return strings.Join(orderedValues, mergedDelimiter), nil
+	label := strings.Join(orderedValues, mergedDelimiter)
+
+	return getTruncatedLabel(label, maxLength, truncateIfExceedsMaxLength)
 }
 
 // GetTemplatedLabel returns a label from the template string and based on the properties and values in the context and
 // overridden by the delimiter, properties and values passed into the function.
-func (c *Client) GetTemplatedLabel(templateString string, values map[string]string) (string, []error) {
+func (c *Client) GetTemplatedLabel(templateString string, values map[string]string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
 	validationErrors := c.ValidateProperties(mergedValues)
 	if len(validationErrors) > 0 {
@@ -162,7 +176,9 @@ func (c *Client) GetTemplatedLabel(templateString string, values map[string]stri
 	if err != nil {
 		return "", []error{err}
 	}
-	return result.String(), nil
+
+	label := result.String()
+	return getTruncatedLabel(label, maxLength, truncateIfExceedsMaxLength)
 }
 
 func (c *Client) GetTags(values map[string]string) (map[string]string, []error) {
@@ -203,7 +219,7 @@ func (c *Client) GetTagsAsList(values map[string]string) ([]map[string]string, [
 }
 
 // NewClient is the factory for creating a new context client.
-func NewClient(properties []model.Property, propertyOrder []string, values map[string]string, options ...func(*Client)) (*Client, error) {
+func NewClient(properties []Property, propertyOrder []string, values map[string]string, options ...func(*Client)) (*Client, error) {
 	cc := &Client{
 		delimiter:  "-",
 		enabled:    true,

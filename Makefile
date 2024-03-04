@@ -8,6 +8,10 @@ build:
 install:
 	go install .
 
+.PHONY: generate
+generate:
+	go generate ./...
+
 .PHONY: test
 test:
 	go test ./... -v $(TESTARGS) -timeout 5m
