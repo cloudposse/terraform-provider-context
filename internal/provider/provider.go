@@ -4,10 +4,13 @@ import (
 	"context"
 
 	"github.com/cloudposse/terraform-provider-context/internal/client"
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -25,11 +28,14 @@ type ContextProvider struct {
 
 // ContextProviderModel describes the provider data model.
 type config struct {
-	Delimiter     types.String `tfsdk:"delimiter"`
-	Enabled       types.Bool   `tfsdk:"enabled"`
-	Properties    types.Map    `tfsdk:"properties"`
-	PropertyOrder types.List   `tfsdk:"property_order"`
-	Values        types.Map    `tfsdk:"values"`
+	Delimiter         types.String `tfsdk:"delimiter"`
+	Enabled           types.Bool   `tfsdk:"enabled"`
+	Properties        types.Map    `tfsdk:"properties"`
+	PropertyOrder     types.List   `tfsdk:"property_order"`
+	ReplaceCharsRegex types.String `tfsdk:"replace_chars_regex"`
+	TagsKeyCase       types.String `tfsdk:"tags_key_case"`
+	TagsValueCase     types.String `tfsdk:"tags_value_case"`
+	Values            types.Map    `tfsdk:"values"`
 }
 
 func (p *ContextProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -58,6 +64,20 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
+			"replace_chars_regex": schema.StringAttribute{
+				MarkdownDescription: "The regex to use for replacing characters in labels created by the provider. Any characters that match the regex will be removed from the label.",
+				Optional:            true,
+			},
+			"tags_key_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the keys of tags created by the provider.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
+			"tags_value_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the values of tags created by the provider.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "A map of values to use for labels created by the provider.",
 				Optional:            true,
@@ -69,6 +89,7 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 
 func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config config
+	options := []func(*client.Client){}
 
 	// Get the configuration from the request
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -85,7 +106,6 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	clientProperties := []client.Property{}
 	for k, prop := range properties {
-
 		property, err := prop.ToModel(k)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert property to model", err.Error())
@@ -106,16 +126,49 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
+	if !config.Enabled.IsNull() {
+		options = append(options, client.WithEnabled(config.Enabled.ValueBool()))
+	}
+
+	if !config.Delimiter.IsNull() {
+		options = append(options, client.WithDelimiter(config.Delimiter.ValueString()))
+	}
+
+	if !config.ReplaceCharsRegex.IsNull() {
+		options = append(options, client.WithReplaceCharsRegex(config.ReplaceCharsRegex.ValueString()))
+	}
+
+	if !config.TagsKeyCase.IsNull() {
+		keyCase, err := cases.FromString(config.TagsKeyCase.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to convert tags key case", err.Error())
+			return
+		}
+		options = append(options, client.WithTagsKeyCase(keyCase))
+	}
+
+	if !config.TagsValueCase.IsNull() {
+		valueCase, err := cases.FromString(config.TagsValueCase.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to convert tags value case", err.Error())
+			return
+		}
+		options = append(options, client.WithTagsValueCase(valueCase))
+	}
+
 	tflog.Debug(ctx, "Data received from the configuration", map[string]any{
-		"delimiter":      config.Delimiter.ValueString(),
-		"enabled":        config.Enabled.ValueBool(),
-		"properties":     clientProperties,
-		"property_order": propertyOrder,
-		"values":         values,
+		"delimiter":           config.Delimiter.ValueString(),
+		"enabled":             config.Enabled.ValueBool(),
+		"properties":          clientProperties,
+		"property_order":      propertyOrder,
+		"replace_chars_regex": config.ReplaceCharsRegex.ValueString(),
+		"tags_key_case":       config.TagsKeyCase.ValueString(),
+		"tags_value_case":     config.TagsValueCase.ValueString(),
+		"values":              values,
 	})
 
 	// Create the context client
-	client, err := client.NewClient(clientProperties, propertyOrder, values)
+	client, err := client.NewClient(clientProperties, propertyOrder, values, options...)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create context client", err.Error())
 		return

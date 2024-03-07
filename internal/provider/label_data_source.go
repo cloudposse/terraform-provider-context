@@ -34,14 +34,15 @@ type LabelDataSource struct {
 
 // LabelDataSourceModel describes the data source data model.
 type LabelDataSourceModel struct {
-	Delimiter  types.String `tfsdk:"delimiter"`
-	Id         types.String `tfsdk:"id"`
-	MaxLength  types.Int64  `tfsdk:"max_length"`
-	Properties types.List   `tfsdk:"properties"`
-	Rendered   types.String `tfsdk:"rendered"`
-	Template   types.String `tfsdk:"template"`
-	Truncate   types.Bool   `tfsdk:"truncate"`
-	Values     types.Map    `tfsdk:"values"`
+	Delimiter         types.String `tfsdk:"delimiter"`
+	Id                types.String `tfsdk:"id"`
+	MaxLength         types.Int64  `tfsdk:"max_length"`
+	Properties        types.List   `tfsdk:"properties"`
+	Rendered          types.String `tfsdk:"rendered"`
+	ReplaceCharsRegex types.String `tfsdk:"replace_chars_regex"`
+	Template          types.String `tfsdk:"template"`
+	Truncate          types.Bool   `tfsdk:"truncate"`
+	Values            types.Map    `tfsdk:"values"`
 }
 
 func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -77,6 +78,10 @@ func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 			"rendered": schema.StringAttribute{
 				MarkdownDescription: "Rendered label",
 				Computed:            true,
+			},
+			"replace_chars_regex": schema.StringAttribute{
+				MarkdownDescription: "The regex to use for replacing characters in labels created by the provider. Any characters that match the regex will be removed from the label.",
+				Optional:            true,
 			},
 			"template": schema.StringAttribute{
 				MarkdownDescription: "Template to use when creating the label. Conflicts with `delimiter` and `properties`.",
@@ -133,13 +138,15 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	// Generate the label
-	resp.Diagnostics = append(resp.Diagnostics, readLabel(ctx, d.providerData.contextClient, &config)...)
+	label, diags := readLabel(ctx, d.providerData.contextClient, &config)
+	resp.Diagnostics = append(resp.Diagnostics, diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Set other properties
 	config.Id = types.StringValue("Label-id")
+	config.Rendered = types.StringValue(label)
 
 	// Write to state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
@@ -156,8 +163,8 @@ func processErrors(errs []error, diags *diag.Diagnostics) {
 	}
 }
 
-// readLabel deptermins the type of label to create and calls the appropriate method to create it.
-func readLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+// readLabel determines the type of label to create and calls the appropriate method to create it.
+func readLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
 	if !config.Template.IsNull() {
 		return readTemplatedLabel(ctx, client, config)
 	}
@@ -165,35 +172,27 @@ func readLabel(ctx context.Context, client *client.Client, config *LabelDataSour
 }
 
 // readTemplatedLabel creates a label using a template.
-func readTemplatedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+func readTemplatedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
 	model, diags := templatedLabelModel{}.FromFramework(ctx, *config)
 	if diags.HasError() {
-		return diags
+		return "", diags
 	}
 
-	label, errs := client.GetTemplatedLabel(model.Template, model.Values, int(model.MaxLength), model.Truncate)
+	label, errs := client.GetTemplatedLabel(model.Template, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
 	processErrors(errs, &diags)
 
-	if !diags.HasError() {
-		config.Rendered = types.StringValue(label)
-	}
-
-	return diags
+	return label, diags
 }
 
 // readDelimitedLabel creates a label using a delimiter.
-func readDelimitedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) diag.Diagnostics {
+func readDelimitedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
 	model, diags := delimitedLabelModel{}.FromFramework(ctx, *config)
 	if diags.HasError() {
-		return diags
+		return "", diags
 	}
 
-	label, errs := client.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, int(model.MaxLength), model.Truncate)
+	label, errs := client.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
 	processErrors(errs, &diags)
 
-	if !diags.HasError() {
-		config.Rendered = types.StringValue(label)
-	}
-
-	return diags
+	return label, diags
 }

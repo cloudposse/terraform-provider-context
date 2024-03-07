@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -24,10 +27,12 @@ type TagsDataSource struct {
 
 // TagsDataSourceModel describes the data source data model.
 type TagsDataSourceModel struct {
-	Id         types.String `tfsdk:"id"`
-	Values     types.Map    `tfsdk:"values"`
-	Tags       types.Map    `tfsdk:"tags"`
-	TagsAsList types.List   `tfsdk:"tags_as_list"`
+	Id            types.String `tfsdk:"id"`
+	Values        types.Map    `tfsdk:"values"`
+	Tags          types.Map    `tfsdk:"tags"`
+	TagsKeyCase   types.String `tfsdk:"tags_key_case"`
+	TagsValueCase types.String `tfsdk:"tags_value_case"`
+	TagsAsList    types.List   `tfsdk:"tags_as_list"`
 }
 
 func (d *TagsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,6 +54,16 @@ func (d *TagsDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				MarkdownDescription: "List of tags in {Key='key', Value='value'} format.",
 				Computed:            true,
 				ElementType:         types.MapType{ElemType: types.StringType},
+			},
+			"tags_key_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the keys of tags created by the provider.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
+			"tags_value_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the values of tags created by the provider.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
 			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "Map of values to override or add to the context when creating the label.",
@@ -102,13 +117,33 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	tags, errs := d.providerData.contextClient.GetTags(localValues)
+	var localTagsKeyCase *cases.Case
+	if !config.TagsKeyCase.IsNull() {
+		tagsKeyCase, err := cases.FromString(*config.TagsKeyCase.ValueStringPointer())
+		localTagsKeyCase = &tagsKeyCase
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to convert tags_key_case to model", err.Error())
+			return
+		}
+	}
+
+	var localTagsValueCase *cases.Case
+	if !config.TagsValueCase.IsNull() {
+		tagsValueCase, err := cases.FromString(*config.TagsKeyCase.ValueStringPointer())
+		localTagsValueCase = &tagsValueCase
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to convert tags_value_case to model", err.Error())
+			return
+		}
+	}
+
+	tags, errs := d.providerData.contextClient.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tagsList, errs := d.providerData.contextClient.GetTagsAsList(localValues)
+	tagsList, errs := d.providerData.contextClient.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
 	if resp.Diagnostics.HasError() {
 		return

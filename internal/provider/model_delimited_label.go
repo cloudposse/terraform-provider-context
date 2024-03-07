@@ -7,11 +7,12 @@ import (
 )
 
 type delimitedLabelModel struct {
-	Delimiter     *string
-	MaxLength     int64
-	PropertyNames []string
-	Truncate      bool
-	Values        map[string]string
+	Delimiter         *string
+	MaxLength         int64
+	PropertyNames     []string
+	ReplaceCharsRegex *string
+	Truncate          bool
+	Values            map[string]string
 }
 
 func (m delimitedLabelModel) FromFramework(ctx context.Context, config LabelDataSourceModel) (delimitedLabelModel, diag.Diagnostics) {
@@ -34,6 +35,12 @@ func (m delimitedLabelModel) FromFramework(ctx context.Context, config LabelData
 		return model, diags
 	}
 	model.PropertyNames = properties
+
+	var replaceCharsRegex *string
+	if !config.ReplaceCharsRegex.IsNull() {
+		replaceCharsRegex = config.ReplaceCharsRegex.ValueStringPointer()
+	}
+	model.ReplaceCharsRegex = replaceCharsRegex
 
 	if !config.Truncate.IsNull() {
 		model.Truncate = config.Truncate.ValueBool()

@@ -40,6 +40,15 @@ func TestAccTagsDataSource(t *testing.T) {
 					resource.TestCheckNoResourceAttr("data.context_tags.test", "tags.Namespace"),
 				),
 			},
+			{
+				Config: testAccTagKeyCasedCfg,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.NAMESPACE", "cp"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.TENANT", "core"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.STAGE", "prod"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.NAME", "example"),
+				),
+			},
 		},
 	})
 }
@@ -74,6 +83,30 @@ provider "context" {
     Stage     = {}
     Name      = {}
   }
+
+  values = {
+    "Namespace" = "cp"
+    "Tenant" = "core"
+    "Stage" = "prod"
+    "Name"  = "example"
+  }
+}
+
+
+data "context_tags" "test" {
+}
+`
+
+const testAccTagKeyCasedCfg = `
+provider "context" {
+  properties = {
+    Namespace = {}
+    Tenant    = {}
+    Stage     = {}
+    Name      = {}
+  }
+
+	tags_key_case = "upper"
 
   values = {
     "Namespace" = "cp"

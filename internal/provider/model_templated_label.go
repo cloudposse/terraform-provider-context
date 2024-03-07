@@ -7,10 +7,11 @@ import (
 )
 
 type templatedLabelModel struct {
-	MaxLength int64
-	Template  string
-	Truncate  bool
-	Values    map[string]string
+	MaxLength         int64
+	Template          string
+	Truncate          bool
+	ReplaceCharsRegex *string
+	Values            map[string]string
 }
 
 func (m templatedLabelModel) FromFramework(ctx context.Context, config LabelDataSourceModel) (templatedLabelModel, diag.Diagnostics) {
@@ -31,6 +32,12 @@ func (m templatedLabelModel) FromFramework(ctx context.Context, config LabelData
 	} else {
 		model.Truncate = true
 	}
+
+	var replaceCharsRegex *string
+	if !config.ReplaceCharsRegex.IsNull() {
+		replaceCharsRegex = config.ReplaceCharsRegex.ValueStringPointer()
+	}
+	model.ReplaceCharsRegex = replaceCharsRegex
 
 	values, diags := FromFrameworkMap[string](ctx, config.Values)
 	if diags.HasError() {

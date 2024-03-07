@@ -3,20 +3,25 @@ package client
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
 
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 	"github.com/cloudposse/terraform-provider-context/pkg/slice"
 	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 )
 
 type Client struct {
-	delimiter     string
-	enabled       bool
-	properties    []Property
-	propertyOrder []string
-	values        map[string]string
+	delimiter         string
+	enabled           bool
+	properties        []Property
+	propertyOrder     []string
+	replaceCharsRexex string
+	tagsKeyCase       cases.Case
+	tagsValueCase     cases.Case
+	values            map[string]string
 }
 
 type DelmitedLabelOptions struct {
@@ -28,17 +33,6 @@ type DelmitedLabelOptions struct {
 // GetDelimiter returns the delimiter from the context.
 func (c *Client) GetDelimiter() string {
 	return c.delimiter
-}
-
-// GetMergedDelmitier merges the delimiter from the context with the delimiter passed in to the function. Used when
-// creating a label.
-func (c *Client) GetMergedDelmitier(delimiter *string) string {
-	mergedDelimiter := c.delimiter
-	if delimiter != nil {
-		mergedDelimiter = *delimiter
-	}
-
-	return mergedDelimiter
 }
 
 // IsEnabled returns a boolean indicating whether the context is enabled.
@@ -68,6 +62,28 @@ func (c *Client) GetPropertyNames([]Property) []string {
 	return names
 }
 
+// GetMergedDelimiter merges the delimiter from the context with the delimiter passed in to the function. Used when
+// creating a label.
+func (c *Client) GetMergedDelimiter(delimiter *string) string {
+	mergedDelimiter := c.delimiter
+	if delimiter != nil {
+		mergedDelimiter = *delimiter
+	}
+
+	return mergedDelimiter
+}
+
+// GetMergedReplaceCharsRegex merges the replaceCharsRegex from the context with the replaceCharsRegex passed in to the
+// function. Used when creating a label.
+func (c *Client) GetMergedReplaceCharsRegex(regex *string) string {
+	mergedRegex := c.replaceCharsRexex
+	if regex != nil {
+		mergedRegex = *regex
+	}
+
+	return mergedRegex
+}
+
 // GetMergedPropertyNames returns either the names of the properties from the context or the names of the properties
 // passed in to the function to derive the properties to use for creating a label.
 func (c *Client) GetMergedPropertyNames(propertyNames []string) []string {
@@ -89,6 +105,22 @@ func (c *Client) GetMergedPropertyOrder(propertyOrder []string) []string {
 		return propertyOrder
 	}
 	return c.propertyOrder
+}
+
+// GetTagsKeyCase returns the tagsKeyCase from the context or the keyCase passed in to the function.
+func (c *Client) GetMergedTagsKeyCase(keyCase *cases.Case) cases.Case {
+	if keyCase != nil {
+		return *keyCase
+	}
+	return c.tagsKeyCase
+}
+
+// GetTagsValueCase returns the tagsValueCase from the context or the valueCase passed in to the function.
+func (c *Client) GetMergedTagsValueCase(valueCase *cases.Case) cases.Case {
+	if valueCase != nil {
+		return *valueCase
+	}
+	return c.tagsValueCase
 }
 
 // GetValues returns the values from the context.
@@ -131,17 +163,30 @@ func getTruncatedLabel(label string, maxLength int, truncateIfExceedsMaxLength b
 	return label, nil
 }
 
+func getRedactedLabel(label string, regex string) (string, error) {
+	if regex == "" {
+		return label, nil
+	}
+
+	compiledRegex, err := regexp.Compile(regex)
+	if err != nil {
+		return "", err
+	}
+	replaced := compiledRegex.ReplaceAllString(label, "")
+	return replaced, nil
+}
+
 // GetDelimitedLabel returns a delimited label based on the properties and values in the context and overridden by the
 // delimiter, properties and values passed into the function.
-func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
+func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
-
+	regex := c.GetMergedReplaceCharsRegex(replaceCharsRegex)
 	validationErrors := c.ValidateProperties(mergedValues)
 	if len(validationErrors) > 0 {
 		return "", validationErrors
 	}
 
-	mergedDelimiter := c.GetMergedDelmitier(delimiter)
+	mergedDelimiter := c.GetMergedDelimiter(delimiter)
 	mergedProperties := c.GetMergedPropertyNames(properties)
 	mergedPropertyOrder := c.GetMergedPropertyOrder(propertyOrder)
 	filteredPropertyOrder := []string{}
@@ -154,13 +199,19 @@ func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, prope
 
 	label := strings.Join(orderedValues, mergedDelimiter)
 
-	return getTruncatedLabel(label, maxLength, truncateIfExceedsMaxLength)
+	redactedLabel, err := getRedactedLabel(label, regex)
+	if err != nil {
+		return "", []error{err}
+	}
+
+	return getTruncatedLabel(redactedLabel, maxLength, truncateIfExceedsMaxLength)
 }
 
 // GetTemplatedLabel returns a label from the template string and based on the properties and values in the context and
 // overridden by the delimiter, properties and values passed into the function.
-func (c *Client) GetTemplatedLabel(templateString string, values map[string]string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
+func (c *Client) GetTemplatedLabel(templateString string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
+	regex := c.GetMergedReplaceCharsRegex(replaceCharsRegex)
 	validationErrors := c.ValidateProperties(mergedValues)
 	if len(validationErrors) > 0 {
 		return "", validationErrors
@@ -178,27 +229,43 @@ func (c *Client) GetTemplatedLabel(templateString string, values map[string]stri
 	}
 
 	label := result.String()
-	return getTruncatedLabel(label, maxLength, truncateIfExceedsMaxLength)
+	redactedLabel, err := getRedactedLabel(label, regex)
+	if err != nil {
+		return "", []error{err}
+	}
+
+	return getTruncatedLabel(redactedLabel, maxLength, truncateIfExceedsMaxLength)
 }
 
-func (c *Client) GetTags(values map[string]string) (map[string]string, []error) {
+func getCasedTag(key string, value string, keyCase cases.Case, valueCase cases.Case) (string, string) {
+	keyValue := keyCase.Apply(key)
+	valueValue := valueCase.Apply(value)
+
+	return keyValue, valueValue
+}
+
+func (c *Client) GetTags(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) (map[string]string, []error) {
 	tags := map[string]string{}
 	mergedValues := c.GetMergedValues(values)
 	validationErrors := c.ValidateProperties(mergedValues)
+	megedTagsKeyCase := c.GetMergedTagsKeyCase(tagsKeyCase)
+	mergedTagsValueCase := c.GetMergedTagsValueCase(tagsValueCase)
+
 	if len(validationErrors) > 0 {
 		return tags, validationErrors
 	}
 
 	for _, p := range c.properties {
 		if p.IncludeInTags {
-			tags[p.Name] = mergedValues[p.Name]
+			key, value := getCasedTag(p.Name, mergedValues[p.Name], megedTagsKeyCase, mergedTagsValueCase)
+			tags[key] = value
 		}
 	}
 	return tags, nil
 }
 
-func (c *Client) GetTagsAsList(values map[string]string) ([]map[string]string, []error) {
-	tags, err := c.GetTags(values)
+func (c *Client) GetTagsAsList(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) ([]map[string]string, []error) {
+	tags, err := c.GetTags(values, tagsKeyCase, tagsValueCase)
 	if err != nil {
 		return nil, err
 	}
@@ -221,10 +288,13 @@ func (c *Client) GetTagsAsList(values map[string]string) ([]map[string]string, [
 // NewClient is the factory for creating a new context client.
 func NewClient(properties []Property, propertyOrder []string, values map[string]string, options ...func(*Client)) (*Client, error) {
 	cc := &Client{
-		delimiter:  "-",
-		enabled:    true,
-		properties: properties,
-		values:     values,
+		delimiter:         "-",
+		enabled:           true,
+		properties:        properties,
+		replaceCharsRexex: "",
+		tagsKeyCase:       cases.TitleCase,
+		tagsValueCase:     cases.None,
+		values:            values,
 	}
 
 	cc.propertyOrder = cc.GetMergedPropertyOrder(cc.GetPropertyNames(properties))
@@ -248,5 +318,24 @@ func WithEnabled(enabled bool) func(*Client) {
 func WithDelimiter(delimiter string) func(*Client) {
 	return func(obj *Client) {
 		obj.delimiter = delimiter
+	}
+}
+
+// WithReplaceCharsRegex is a functional option for setting the properties in the context when creating a new context client.
+func WithReplaceCharsRegex(regex string) func(*Client) {
+	return func(obj *Client) {
+		obj.replaceCharsRexex = regex
+	}
+}
+
+func WithTagsKeyCase(keyCase cases.Case) func(*Client) {
+	return func(obj *Client) {
+		obj.tagsKeyCase = keyCase
+	}
+}
+
+func WithTagsValueCase(valueCase cases.Case) func(*Client) {
+	return func(obj *Client) {
+		obj.tagsValueCase = valueCase
 	}
 }
