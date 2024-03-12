@@ -17,6 +17,8 @@ Tags data source
 
 ### Optional
 
+- `tags_key_case` (String) The case to use for the keys of tags created by the provider.
+- `tags_value_case` (String) The case to use for the values of tags created by the provider.
 - `values` (Map of String) Map of values to override or add to the context when creating the label.
 
 ### Read-Only

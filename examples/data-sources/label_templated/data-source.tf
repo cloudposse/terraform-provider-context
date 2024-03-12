@@ -10,32 +10,31 @@ provider "context" {
   delimiter = "~"
   enabled   = false
   properties = {
-    Namespace = { required = true }
-    Tenant    = { required = true }
-    Stage     = {}
-    Name      = {}
+    namespace   = {}
+    tenant      = {}
+    stage       = {}
+    environment = {}
+    name        = {}
   }
 
-  property_order = ["Namespace", "Tenant", "Stage", "Name"]
+  property_order = ["namespace", "tenant", "stage", "environment", "name"]
 
   values = {
-    //"Namespace" = "cp"
-    //"Tenant" = "core"
-    "Stage" = "prod"
-    "Name"  = "example"
+    "namespace"   = "cp"
+    "tenant"      = "core"
+    "stage"       = "prod"
+    "environment" = "ue1"
+    "name"        = "example"
   }
 }
 
+
 data "context_label" "example" {
+  template = "{{.namespace}}/{{.tenant}}/{{.stage}}/{{.name}}"
   values = {
-    "Namespace" = "cp"
-    "Tenant"    = "core"
+    "tenant" = "plat"
+    "stage"  = "dev"
   }
-  #template = "{{.Namespace}}~{{.Tenant}}~{{.Stage}}~{{.Name}}"
-  # values = {
-  #   "Namespace" = "mdc"
-  # }
-  //properties = ["Tenant", "Stage", "Name", "Namespace"]
 }
 
 output "rendered" {

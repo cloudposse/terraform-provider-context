@@ -10,26 +10,28 @@ provider "context" {
   delimiter = "~"
   enabled   = false
   properties = {
-    Namespace = {}
-    Tenant    = {}
-    Stage     = {}
-    Name      = {}
+    namespace   = {}
+    tenant      = {}
+    stage       = {}
+    environment = {}
+    name        = {}
   }
 
-  property_order = ["Namespace", "Tenant", "Stage", "Name"]
+  property_order = ["namespace", "tenant", "stage", "environment", "name"]
 
   values = {
-    "Namespace" = "cp"
-    "Tenant"    = "core"
-    "Stage"     = "prod"
-    "Name"      = "example"
+    "namespace"   = "cp"
+    "tenant"      = "core"
+    "stage"       = "prod"
+    "environment" = "ue1"
+    "name"        = "example"
   }
 }
 
 data "context_label" "example" {
   values = {
-    "Namespace" = "cp"
-    "Tenant"    = "core"
+    "tenant" = "plat"
+    "stage"  = "dev"
   }
 }
 

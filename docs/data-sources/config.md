@@ -31,8 +31,8 @@ Context Config data source
 
 Optional:
 
-- `include_in_tags` (Boolean) A flag to indicate if the property should be included in tags
-- `max_length` (Number) The maximum length of the property
-- `min_length` (Number) The minimum length of the property
-- `required` (Boolean) A flag to indicate if the property is required
-- `validation_regex` (String) A regular expression to validate the property
+- `include_in_tags` (Boolean) A flag to indicate if the property should be included in tags.
+- `max_length` (Number) The maximum length of the property.
+- `min_length` (Number) The minimum length of the property.
+- `required` (Boolean) A flag to indicate if the property is required.
+- `validation_regex` (String) A regular expression to validate the property.
