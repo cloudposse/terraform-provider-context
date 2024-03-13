@@ -116,8 +116,7 @@ examples: |-
   - [`examples/data-sources/label-templated`](/examples/data-sources/label-templated/)
   - [`examples/data-sources/tags`](/examples/data-sources/tags/)
 
-include:
-  - "docs/developer.md"
+include: []
 
 # Contributors to this project
 contributors: [""]
