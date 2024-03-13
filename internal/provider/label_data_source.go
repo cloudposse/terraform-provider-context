@@ -145,7 +145,7 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	// Set other properties
-	config.Id = types.StringValue("Label-id")
+	config.Id = types.StringValue(label)
 	config.Rendered = types.StringValue(label)
 
 	// Write to state

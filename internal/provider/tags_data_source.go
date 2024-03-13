@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
+	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -149,7 +150,8 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	config.Id = types.StringValue("Tags-id")
+	tagsAsHash := mapHelpers.HashMap(tags)
+	config.Id = types.StringValue(tagsAsHash)
 
 	frameworkTags, diags := types.MapValueFrom(ctx, types.StringType, tags)
 	resp.Diagnostics.Append(diags...)
@@ -165,7 +167,7 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 	config.TagsAsList = frameworkTagsAsList
 
-	tflog.Trace(ctx, "create tags data source")
+	tflog.Trace(ctx, "created tags data source")
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
