@@ -13,6 +13,7 @@ docs: readme
 
 .PHONY: deps
 deps:
+	go get github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt
 	go mod tidy
 
 .PHONY: generate

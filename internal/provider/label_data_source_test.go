@@ -64,6 +64,7 @@ func TestAccLabelDataSource(t *testing.T) {
 				Config: testAccBasicCfg,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.context_label.test", "rendered", "cp-core-prod-example"),
+					resource.TestCheckResourceAttr("data.context_label.test", "id", "c7b8935fee1e57c1b040921b9ad51481e833ddb94224ef51ff13a9397ac45e13"), //sha256 of rendered value
 				),
 			},
 			{
