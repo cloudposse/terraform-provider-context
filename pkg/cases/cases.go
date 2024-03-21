@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	tc "golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type Case struct {
@@ -18,7 +16,6 @@ func (r Case) String() string {
 }
 
 func (r Case) Apply(value string) string {
-
 	switch r.slug {
 	case "none":
 		return value
@@ -29,7 +26,7 @@ func (r Case) Apply(value string) string {
 	case "snake":
 		return strcase.ToSnake(value)
 	case "title":
-		return tc.Title(language.English).String(value)
+		return strcase.ToCamel(value)
 	case "upper":
 		return strings.ToUpper(value)
 	}

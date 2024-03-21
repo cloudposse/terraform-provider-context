@@ -1,5 +1,5 @@
 # Terraform Provider release workflow.
-name: Release
+name: Build Assets on Release
 
 # This GitHub action creates a release when a tag that matches the pattern
 # "*" (e.g. 0.1.0) is created.

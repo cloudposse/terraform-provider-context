@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	configHelpers "github.com/cloudposse/terraform-provider-context/internal/config"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -124,7 +125,13 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 	config.Values = vals
 
-	config.Id = types.StringValue("Config-id")
+	id, err := configHelpers.HashConfig(delimiter, enabled, properties, values)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to hash config", err.Error())
+		return
+	}
+
+	config.Id = types.StringValue(id)
 	config.Delimiter = types.StringValue(delimiter)
 	config.Enabled = types.BoolValue(enabled)
 
