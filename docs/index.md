@@ -61,8 +61,8 @@ resource "context_tags" "example" {
 - `properties` (Attributes Map) A map of properties to use for labels created by the provider. (see [below for nested schema](#nestedatt--properties))
 - `property_order` (List of String) The default order of properties to use for labels created by the provider.
 - `replace_chars_regex` (String) The regex to use for replacing characters in labels created by the provider. Any characters that match the regex will be removed from the label.
-- `tags_key_case` (String) The case to use for the keys of tags created by the provider.
-- `tags_value_case` (String) The case to use for the values of tags created by the provider.
+- `tags_key_case` (String) The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.
+- `tags_value_case` (String) The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.
 - `values` (Map of String) A map of values to use for labels created by the provider.
 
 <a id="nestedatt--properties"></a>
