@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestTCases(t *testing.T) {
+func TestCases(t *testing.T) {
 	tests := []struct {
 		caseType string
 		input    string
@@ -13,13 +13,17 @@ func TestTCases(t *testing.T) {
 		{"none", "mytag", "mytag"},
 		{"lower", "MYTAG", "mytag"},
 		{"camel", "my_tag_example", "myTagExample"},
+		{"camel", "support email", "supportEmail"},
 		{"snake", "MyTag", "my_tag"},
-		{"title", "mytag", "Mytag"},
 		{"none", "", ""},
 		{"lower", "AbC", "abc"},
 		{"camel", "CamelCase", "camelCase"},
 		{"snake", "SNAKE_CASE", "snake_case"},
-		{"title", "this is a title", "This Is A Title"},
+		{"title", "mytag", "Mytag"},
+		{"title", "this is a title", "ThisIsATitle"},
+		{"title", "support_email", "SupportEmail"},
+		{"title", "support-email", "SupportEmail"},
+		{"title", "support-email-address", "SupportEmailAddress"},
 		{"upper", "upper case", "UPPER CASE"},
 	}
 
