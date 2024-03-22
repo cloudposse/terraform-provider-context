@@ -24,6 +24,10 @@ Context Config data source
 - `delimiter` (String) Delimiter to use when creating the label from properties. Conflicts with `template`.
 - `enabled` (Boolean) Flag to indicate if the config is enabled.
 - `properties` (Attributes Map) A map of properties to use for labels created by the provider. (see [below for nested schema](#nestedatt--properties))
+- `property_order` (List of String) A list of properties to use for labels created by the provider.
+- `replace_chars_regex` (String) Regex to use for replacing characters in labels created by the provider.
+- `tags_key_case` (String) Case to use for keys in tags created by the provider.
+- `tags_value_case` (String) Case to use for values in tags created by the provider.
 - `values` (Map of String) A map of values to use for labels created by the provider.
 
 <a id="nestedatt--properties"></a>

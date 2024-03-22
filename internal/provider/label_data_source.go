@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cloudposse/terraform-provider-context/internal/client"
+	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -145,7 +146,8 @@ func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	// Set other properties
-	config.Id = types.StringValue("Label-id")
+	labelAsHash := stringHelpers.HashString(label)
+	config.Id = types.StringValue(labelAsHash)
 	config.Rendered = types.StringValue(label)
 
 	// Write to state

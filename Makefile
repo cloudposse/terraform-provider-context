@@ -13,6 +13,7 @@ docs: readme
 
 .PHONY: deps
 deps:
+	go get github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt
 	go mod tidy
 
 .PHONY: generate
@@ -29,9 +30,9 @@ tfdocs:
 
 .PHONY: test
 test:
-	go test ./... -json -v $(TESTARGS) -timeout 5m | gotestfmt
+	go test ./... -json -v $(TESTARGS) -timeout 5m -count 1 | gotestfmt
 
 # Run acceptance tests
 .PHONY: testacc
 testacc:
-	TF_ACC=1 go test ./... -json -v $(TESTARGS) -timeout 120m | gotestfmt
+	TF_ACC=1 go test ./... -json -v $(TESTARGS) -count 1 -timeout 120m | gotestfmt
