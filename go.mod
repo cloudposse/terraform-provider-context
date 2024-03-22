@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.7.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/sigurn/crc16 v0.0.0-20240131213347-83fcde1e29d1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
