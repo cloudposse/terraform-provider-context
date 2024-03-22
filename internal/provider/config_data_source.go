@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	configHelpers "github.com/cloudposse/terraform-provider-context/internal/config"
+	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,11 +28,15 @@ type ConfigDataSource struct {
 
 // ConfigDataSourceModel describes the data source data model.
 type ConfigDataSourceModel struct {
-	Delimiter  types.String `tfsdk:"delimiter"`
-	Enabled    types.Bool   `tfsdk:"enabled"`
-	Properties types.Map    `tfsdk:"properties"`
-	Values     types.Map    `tfsdk:"values"`
-	Id         types.String `tfsdk:"id"`
+	Delimiter         types.String `tfsdk:"delimiter"`
+	Enabled           types.Bool   `tfsdk:"enabled"`
+	Properties        types.Map    `tfsdk:"properties"`
+	PropertyOrder     types.List   `tfsdk:"property_order"`
+	ReplaceCharsRegex types.String `tfsdk:"replace_chars_regex"`
+	TagsKeyCase       types.String `tfsdk:"tags_key_case"`
+	TagsValueCase     types.String `tfsdk:"tags_value_case"`
+	Values            types.Map    `tfsdk:"values"`
+	Id                types.String `tfsdk:"id"`
 }
 
 func (d *ConfigDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -56,6 +60,23 @@ func (d *ConfigDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 				MarkdownDescription: "A map of properties to use for labels created by the provider.",
 				Computed:            true,
 				NestedObject:        getPropertiesDSSchema(),
+			},
+			"property_order": schema.ListAttribute{
+				MarkdownDescription: "A list of properties to use for labels created by the provider.",
+				Computed:            true,
+				ElementType:         types.StringType,
+			},
+			"replace_chars_regex": schema.StringAttribute{
+				MarkdownDescription: "Regex to use for replacing characters in labels created by the provider.",
+				Computed:            true,
+			},
+			"tags_key_case": schema.StringAttribute{
+				MarkdownDescription: "Case to use for keys in tags created by the provider.",
+				Computed:            true,
+			},
+			"tags_value_case": schema.StringAttribute{
+				MarkdownDescription: "Case to use for values in tags created by the provider.",
+				Computed:            true,
 			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "A map of values to use for labels created by the provider.",
@@ -98,9 +119,11 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	// delimiter
 	delimiter := d.providerData.contextClient.GetDelimiter()
+	config.Delimiter = types.StringValue(delimiter)
 
 	// enabled
 	enabled := d.providerData.contextClient.IsEnabled()
+	config.Enabled = types.BoolValue(enabled)
 
 	// properties
 	properties := d.providerData.contextClient.GetProperties()
@@ -116,6 +139,27 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 	config.Properties = props
 
+	// propertyOrder
+	propertyOrder := d.providerData.contextClient.GetPropertyOrder()
+	propOrder, diag := types.ListValueFrom(ctx, types.StringType, propertyOrder)
+	resp.Diagnostics.Append(diag...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	config.PropertyOrder = propOrder
+
+	// replaceCharsRegex
+	replaceRegexChars := d.providerData.contextClient.GetReplaceCharsRegex()
+	config.ReplaceCharsRegex = types.StringValue(replaceRegexChars)
+
+	// tagsKeyCase
+	tagsKeyCase := d.providerData.contextClient.GetTagsKeyCase()
+	config.TagsKeyCase = types.StringValue(tagsKeyCase)
+
+	// tagsValueCase
+	tagsValueCase := d.providerData.contextClient.GetTagsValueCase()
+	config.TagsValueCase = types.StringValue(tagsValueCase)
+
 	// values
 	values := d.providerData.contextClient.GetValues()
 	vals, diag := types.MapValueFrom(ctx, types.StringType, values)
@@ -125,15 +169,9 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 	config.Values = vals
 
-	id, err := configHelpers.HashConfig(delimiter, enabled, properties, values)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to hash config", err.Error())
-		return
-	}
-
+	// id
+	id := mapHelpers.HashMap(config)
 	config.Id = types.StringValue(id)
-	config.Delimiter = types.StringValue(delimiter)
-	config.Enabled = types.BoolValue(enabled)
 
 	tflog.Trace(ctx, "create config data source")
 

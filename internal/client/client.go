@@ -18,7 +18,7 @@ type Client struct {
 	enabled           bool
 	properties        []Property
 	propertyOrder     []string
-	replaceCharsRexex string
+	replaceCharsRegex string
 	tagsKeyCase       cases.Case
 	tagsValueCase     cases.Case
 	values            map[string]string
@@ -76,7 +76,7 @@ func (c *Client) GetMergedDelimiter(delimiter *string) string {
 // GetMergedReplaceCharsRegex merges the replaceCharsRegex from the context with the replaceCharsRegex passed in to the
 // function. Used when creating a label.
 func (c *Client) GetMergedReplaceCharsRegex(regex *string) string {
-	mergedRegex := c.replaceCharsRexex
+	mergedRegex := c.replaceCharsRegex
 	if regex != nil {
 		mergedRegex = *regex
 	}
@@ -105,6 +105,21 @@ func (c *Client) GetMergedPropertyOrder(propertyOrder []string) []string {
 		return propertyOrder
 	}
 	return c.propertyOrder
+}
+
+// GetReplaceCharsRegex returns the replaceCharsRegex from the context.
+func (c *Client) GetReplaceCharsRegex() string {
+	return c.replaceCharsRegex
+}
+
+// GetTagsKeyCase returns the tagsKeyCase from the context.
+func (c *Client) GetTagsKeyCase() string {
+	return c.tagsKeyCase.String()
+}
+
+// GetTagsValueCase returns the tagsValueCase from the context.
+func (c *Client) GetTagsValueCase() string {
+	return c.tagsValueCase.String()
 }
 
 // GetTagsKeyCase returns the tagsKeyCase from the context or the keyCase passed in to the function.
@@ -291,7 +306,7 @@ func NewClient(properties []Property, propertyOrder []string, values map[string]
 		delimiter:         "-",
 		enabled:           true,
 		properties:        properties,
-		replaceCharsRexex: "",
+		replaceCharsRegex: "",
 		tagsKeyCase:       cases.TitleCase,
 		tagsValueCase:     cases.None,
 		values:            values,
@@ -324,7 +339,7 @@ func WithDelimiter(delimiter string) func(*Client) {
 // WithReplaceCharsRegex is a functional option for setting the properties in the context when creating a new context client.
 func WithReplaceCharsRegex(regex string) func(*Client) {
 	return func(obj *Client) {
-		obj.replaceCharsRexex = regex
+		obj.replaceCharsRegex = regex
 	}
 }
 

@@ -12,48 +12,6 @@ func TestAccConfigDataSource(t *testing.T) {
 	}
 	`)
 
-	// testAccBasicTruncatedCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	max_length = 10
-	// 	truncate = true
-	// }
-	// `)
-
-	// testAccLocalDelimiterCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	delimiter = "~"
-	// }
-	// `)
-
-	// testAccLocalPropertyOrderCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	properties = ["Name", "Namespace", "Tenant", "Stage"]
-	// }
-	// `)
-
-	// testAccLocalValuesCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	values = {
-	// 		"Namespace" = "tst"
-	// 		"Name" = "testing"
-	// 	}
-	// }
-	// `)
-
-	// testAccLocalTemplateCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	template = "{{.Namespace}}/{{.Tenant}}/{{.Stage}}/{{.Name}}"
-	// }
-	// `)
-
-	// testAccLocalTemplateTruncatedCfg := getConfigWithProvider(`
-	// data "context_config" "test" {
-	// 	template = "{{.Namespace}}/{{.Tenant}}/{{.Stage}}/{{.Name}}"
-	// 	max_length = 10
-	// 	truncate = true
-	// }
-	// `)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -62,7 +20,12 @@ func TestAccConfigDataSource(t *testing.T) {
 			{
 				Config: testAccBasicCfg,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.context_config.test", "id", "32a5ac069253a6214ec4e22fa49ec1f634cd3014971dc7a8bb215221885a72e6"),
+					resource.TestCheckResourceAttr("data.context_config.test", "id", "40ca2d12ec2fd2c98beb58579af00d3941b50a87f61165dac0b1bfd08dc47dbc"),
+					resource.TestCheckResourceAttr("data.context_config.test", "delimiter", "-"),
+					resource.TestCheckResourceAttr("data.context_config.test", "values.Namespace", "cp"),
+					resource.TestCheckResourceAttr("data.context_config.test", "property_order.0", "Namespace"),
+					resource.TestCheckResourceAttr("data.context_config.test", "tags_key_case", "title"),
+					resource.TestCheckResourceAttr("data.context_config.test", "tags_value_case", "none"),
 				),
 			},
 		},
