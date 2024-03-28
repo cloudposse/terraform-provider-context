@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cloudposse/terraform-provider-context/internal/client"
+	"github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -30,20 +30,7 @@ func NewLabelDataSource() datasource.DataSource {
 
 // LabelDataSource defines the data source implementation.
 type LabelDataSource struct {
-	providerData *providerData
-}
-
-// LabelDataSourceModel describes the data source data model.
-type LabelDataSourceModel struct {
-	Delimiter         types.String `tfsdk:"delimiter"`
-	Id                types.String `tfsdk:"id"`
-	MaxLength         types.Int64  `tfsdk:"max_length"`
-	Properties        types.List   `tfsdk:"properties"`
-	Rendered          types.String `tfsdk:"rendered"`
-	ReplaceCharsRegex types.String `tfsdk:"replace_chars_regex"`
-	Template          types.String `tfsdk:"template"`
-	Truncate          types.Bool   `tfsdk:"truncate"`
-	Values            types.Map    `tfsdk:"values"`
+	providerData *model.ProviderData
 }
 
 func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -107,7 +94,7 @@ func (d *LabelDataSource) Configure(ctx context.Context, req datasource.Configur
 		return
 	}
 
-	providerData, ok := req.ProviderData.(*providerData)
+	providerData, ok := req.ProviderData.(*model.ProviderData)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
@@ -133,13 +120,13 @@ func (d *LabelDataSource) ConfigValidators(ctx context.Context) []datasource.Con
 }
 
 func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config LabelDataSourceModel
+	var config model.DataSourceLabelConfig
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	// Generate the label
-	label, diags := readLabel(ctx, d.providerData.contextClient, &config)
+	label, diags := readLabel(ctx, d.providerData.ProviderConfig, &config)
 	resp.Diagnostics = append(resp.Diagnostics, diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -166,34 +153,34 @@ func processErrors(errs []error, diags *diag.Diagnostics) {
 }
 
 // readLabel determines the type of label to create and calls the appropriate method to create it.
-func readLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
+func readLabel(ctx context.Context, pc *model.ProviderConfig, config *model.DataSourceLabelConfig) (string, diag.Diagnostics) {
 	if !config.Template.IsNull() {
-		return readTemplatedLabel(ctx, client, config)
+		return readTemplatedLabel(ctx, pc, config)
 	}
-	return readDelimitedLabel(ctx, client, config)
+	return readDelimitedLabel(ctx, pc, config)
 }
 
 // readTemplatedLabel creates a label using a template.
-func readTemplatedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
-	model, diags := templatedLabelModel{}.FromFramework(ctx, *config)
+func readTemplatedLabel(ctx context.Context, pc *model.ProviderConfig, config *model.DataSourceLabelConfig) (string, diag.Diagnostics) {
+	model, diags := model.TemplatedLabelModel{}.FromFramework(ctx, *config)
 	if diags.HasError() {
 		return "", diags
 	}
 
-	label, errs := client.GetTemplatedLabel(model.Template, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
+	label, errs := pc.GetTemplatedLabel(model.Template, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
 	processErrors(errs, &diags)
 
 	return label, diags
 }
 
 // readDelimitedLabel creates a label using a delimiter.
-func readDelimitedLabel(ctx context.Context, client *client.Client, config *LabelDataSourceModel) (string, diag.Diagnostics) {
-	model, diags := delimitedLabelModel{}.FromFramework(ctx, *config)
+func readDelimitedLabel(ctx context.Context, pc *model.ProviderConfig, config *model.DataSourceLabelConfig) (string, diag.Diagnostics) {
+	model, diags := model.DelimitedLabelModel{}.FromFramework(ctx, *config)
 	if diags.HasError() {
 		return "", diags
 	}
 
-	label, errs := client.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
+	label, errs := pc.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
 	processErrors(errs, &diags)
 
 	return label, diags
