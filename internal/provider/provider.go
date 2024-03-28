@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/cloudposse/terraform-provider-context/internal/client"
+	"github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -20,14 +20,14 @@ var _ provider.Provider = &ContextProvider{}
 
 // ContextProvider defines the provider implementation.
 type ContextProvider struct {
-	providerData *providerData
+	providerData *model.ProviderData
 	// version is set to the provider version on release, "dev" when the provider is built and ran locally, and "test"
 	// when running acceptance testing.
 	version string
 }
 
 // ContextProviderModel describes the provider data model.
-type config struct {
+type providerConfigModel struct {
 	Delimiter         types.String `tfsdk:"delimiter"`
 	Enabled           types.Bool   `tfsdk:"enabled"`
 	Properties        types.Map    `tfsdk:"properties"`
@@ -88,94 +88,94 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 }
 
 func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var config config
-	options := []func(*client.Client){}
+	var providerConfigModel providerConfigModel
+	options := []func(*model.ProviderConfig){}
 
 	// Get the configuration from the request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfigModel)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Convert config to native go types
-	properties := map[string]FrameworkProperty{}
-	resp.Diagnostics.Append(config.Properties.ElementsAs(ctx, &properties, false)...)
+	properties := map[string]model.FrameworkProperty{}
+	resp.Diagnostics.Append(providerConfigModel.Properties.ElementsAs(ctx, &properties, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	clientProperties := []client.Property{}
+	configProperties := []model.Property{}
 	for k, prop := range properties {
 		property, err := prop.ToModel(k)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert property to model", err.Error())
 			return
 		}
-		clientProperties = append(clientProperties, *property)
+		configProperties = append(configProperties, *property)
 	}
 
 	propertyOrder := []string{}
-	resp.Diagnostics.Append(config.PropertyOrder.ElementsAs(ctx, &propertyOrder, false)...)
+	resp.Diagnostics.Append(providerConfigModel.PropertyOrder.ElementsAs(ctx, &propertyOrder, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	values := map[string]string{}
-	resp.Diagnostics.Append(config.Values.ElementsAs(ctx, &values, false)...)
+	resp.Diagnostics.Append(providerConfigModel.Values.ElementsAs(ctx, &values, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !config.Enabled.IsNull() {
-		options = append(options, client.WithEnabled(config.Enabled.ValueBool()))
+	if !providerConfigModel.Enabled.IsNull() {
+		options = append(options, model.WithEnabled(providerConfigModel.Enabled.ValueBool()))
 	}
 
-	if !config.Delimiter.IsNull() {
-		options = append(options, client.WithDelimiter(config.Delimiter.ValueString()))
+	if !providerConfigModel.Delimiter.IsNull() {
+		options = append(options, model.WithDelimiter(providerConfigModel.Delimiter.ValueString()))
 	}
 
-	if !config.ReplaceCharsRegex.IsNull() {
-		options = append(options, client.WithReplaceCharsRegex(config.ReplaceCharsRegex.ValueString()))
+	if !providerConfigModel.ReplaceCharsRegex.IsNull() {
+		options = append(options, model.WithReplaceCharsRegex(providerConfigModel.ReplaceCharsRegex.ValueString()))
 	}
 
-	if !config.TagsKeyCase.IsNull() {
-		keyCase, err := cases.FromString(config.TagsKeyCase.ValueString())
+	if !providerConfigModel.TagsKeyCase.IsNull() {
+		keyCase, err := cases.FromString(providerConfigModel.TagsKeyCase.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags key case", err.Error())
 			return
 		}
-		options = append(options, client.WithTagsKeyCase(keyCase))
+		options = append(options, model.WithTagsKeyCase(keyCase))
 	}
 
-	if !config.TagsValueCase.IsNull() {
-		valueCase, err := cases.FromString(config.TagsValueCase.ValueString())
+	if !providerConfigModel.TagsValueCase.IsNull() {
+		valueCase, err := cases.FromString(providerConfigModel.TagsValueCase.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags value case", err.Error())
 			return
 		}
-		options = append(options, client.WithTagsValueCase(valueCase))
+		options = append(options, model.WithTagsValueCase(valueCase))
 	}
 
 	tflog.Debug(ctx, "Data received from the configuration", map[string]any{
-		"delimiter":           config.Delimiter.ValueString(),
-		"enabled":             config.Enabled.ValueBool(),
-		"properties":          clientProperties,
+		"delimiter":           providerConfigModel.Delimiter.ValueString(),
+		"enabled":             providerConfigModel.Enabled.ValueBool(),
+		"properties":          configProperties,
 		"property_order":      propertyOrder,
-		"replace_chars_regex": config.ReplaceCharsRegex.ValueString(),
-		"tags_key_case":       config.TagsKeyCase.ValueString(),
-		"tags_value_case":     config.TagsValueCase.ValueString(),
+		"replace_chars_regex": providerConfigModel.ReplaceCharsRegex.ValueString(),
+		"tags_key_case":       providerConfigModel.TagsKeyCase.ValueString(),
+		"tags_value_case":     providerConfigModel.TagsValueCase.ValueString(),
 		"values":              values,
 	})
 
-	// Create the context client
-	client, err := client.NewClient(clientProperties, propertyOrder, values, options...)
+	// Create the context providerConfig
+	providerConfig, err := model.NewProviderConfig(configProperties, propertyOrder, values, options...)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to create context client", err.Error())
+		resp.Diagnostics.AddError("Failed to create provider config", err.Error())
 		return
 	}
 
-	providerData := &providerData{
-		contextClient: client,
+	providerData := &model.ProviderData{
+		ProviderConfig: providerConfig,
 	}
 
 	// Set the provider data in the response
@@ -183,7 +183,7 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 
-	tflog.Info(ctx, "Configured Context client", map[string]any{"success": true})
+	tflog.Info(ctx, "Configured provider config", map[string]any{"success": true})
 }
 
 func (p *ContextProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -198,7 +198,7 @@ func (p *ContextProvider) DataSources(ctx context.Context) []func() datasource.D
 	}
 }
 
-func New(version string) func() provider.Provider {
+func NewProvider(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &ContextProvider{
 			version: version,

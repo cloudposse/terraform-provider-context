@@ -1,12 +1,13 @@
-package provider
+package model
 
 import (
 	"context"
 
+	"github.com/cloudposse/terraform-provider-context/internal/framework"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-type templatedLabelModel struct {
+type TemplatedLabelModel struct {
 	MaxLength         int64
 	Template          string
 	Truncate          bool
@@ -14,8 +15,8 @@ type templatedLabelModel struct {
 	Values            map[string]string
 }
 
-func (m templatedLabelModel) FromFramework(ctx context.Context, config LabelDataSourceModel) (templatedLabelModel, diag.Diagnostics) {
-	model := templatedLabelModel{}
+func (m TemplatedLabelModel) FromFramework(ctx context.Context, config DataSourceLabelConfig) (TemplatedLabelModel, diag.Diagnostics) {
+	model := TemplatedLabelModel{}
 
 	if config.MaxLength.IsNull() {
 		model.MaxLength = 0
@@ -39,7 +40,7 @@ func (m templatedLabelModel) FromFramework(ctx context.Context, config LabelData
 	}
 	model.ReplaceCharsRegex = replaceCharsRegex
 
-	values, diags := FromFrameworkMap[string](ctx, config.Values)
+	values, diags := framework.FromFrameworkMap[string](ctx, config.Values)
 	if diags.HasError() {
 		return model, diags
 	}

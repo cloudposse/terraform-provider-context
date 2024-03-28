@@ -1,12 +1,13 @@
-package provider
+package model
 
 import (
 	"context"
 
+	"github.com/cloudposse/terraform-provider-context/internal/framework"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-type delimitedLabelModel struct {
+type DelimitedLabelModel struct {
 	Delimiter         *string
 	MaxLength         int64
 	PropertyNames     []string
@@ -15,8 +16,8 @@ type delimitedLabelModel struct {
 	Values            map[string]string
 }
 
-func (m delimitedLabelModel) FromFramework(ctx context.Context, config LabelDataSourceModel) (delimitedLabelModel, diag.Diagnostics) {
-	model := delimitedLabelModel{}
+func (m DelimitedLabelModel) FromFramework(ctx context.Context, config DataSourceLabelConfig) (DelimitedLabelModel, diag.Diagnostics) {
+	model := DelimitedLabelModel{}
 
 	var delimiter *string
 	if !config.Delimiter.IsNull() {
@@ -30,7 +31,7 @@ func (m delimitedLabelModel) FromFramework(ctx context.Context, config LabelData
 		model.MaxLength = config.MaxLength.ValueInt64()
 	}
 
-	properties, diags := FromFrameworkList[string](ctx, config.Properties)
+	properties, diags := framework.FromFrameworkList[string](ctx, config.Properties)
 	if diags.HasError() {
 		return model, diags
 	}
@@ -48,7 +49,7 @@ func (m delimitedLabelModel) FromFramework(ctx context.Context, config LabelData
 		model.Truncate = true
 	}
 
-	values, diags := FromFrameworkMap[string](ctx, config.Values)
+	values, diags := framework.FromFrameworkMap[string](ctx, config.Values)
 	if diags.HasError() {
 		return model, diags
 	}

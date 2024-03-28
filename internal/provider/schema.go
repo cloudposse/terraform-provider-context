@@ -1,14 +1,10 @@
 package provider
 
 import (
-	"context"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	dsschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func getPropertiesSchema() schema.NestedAttributeObject {
@@ -69,30 +65,4 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 			},
 		},
 	}
-}
-
-// FromFrameworkMap converts a types.Map to a map[string]T.
-func FromFrameworkMap[T interface{}](ctx context.Context, m types.Map) (map[string]T, diag.Diagnostics) {
-	localValues := make(map[string]T, len(m.Elements()))
-	if !m.IsNull() {
-		diag := m.ElementsAs(ctx, &localValues, false)
-
-		if diag.HasError() {
-			return nil, diag
-		}
-	}
-	return localValues, nil
-}
-
-// FromFrameworkList converts a types.List to a []T.
-func FromFrameworkList[T interface{}](ctx context.Context, m types.List) ([]T, diag.Diagnostics) {
-	localValues := make([]T, len(m.Elements()))
-	if !m.IsNull() {
-		diag := m.ElementsAs(ctx, &localValues, false)
-
-		if diag.HasError() {
-			return nil, diag
-		}
-	}
-	return localValues, nil
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudposse/terraform-provider-context/internal/framework"
+	"github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -23,7 +25,7 @@ func NewTagsDataSource() datasource.DataSource {
 
 // TagsDataSource defines the data source implementation.
 type TagsDataSource struct {
-	providerData *providerData
+	providerData *model.ProviderData
 }
 
 // TagsDataSourceModel describes the data source data model.
@@ -85,7 +87,7 @@ func (d *TagsDataSource) Configure(ctx context.Context, req datasource.Configure
 		return
 	}
 
-	providerData, ok := req.ProviderData.(*providerData)
+	providerData, ok := req.ProviderData.(*model.ProviderData)
 
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -112,7 +114,7 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
-	localValues, diags := FromFrameworkMap[string](ctx, config.Values)
+	localValues, diags := framework.FromFrameworkMap[string](ctx, config.Values)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -138,13 +140,13 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		}
 	}
 
-	tags, errs := d.providerData.contextClient.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
+	tags, errs := d.providerData.ProviderConfig.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tagsList, errs := d.providerData.contextClient.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
+	tagsList, errs := d.providerData.ProviderConfig.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
 	if resp.Diagnostics.HasError() {
 		return

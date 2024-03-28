@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudposse/terraform-provider-context/internal/model"
 	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -23,7 +24,7 @@ func NewConfigDataSource() datasource.DataSource {
 
 // ConfigDataSource defines the data source implementation.
 type ConfigDataSource struct {
-	providerData *providerData
+	providerData *model.ProviderData
 }
 
 // ConfigDataSourceModel describes the data source data model.
@@ -98,7 +99,7 @@ func (d *ConfigDataSource) Configure(ctx context.Context, req datasource.Configu
 		return
 	}
 
-	providerData, ok := req.ProviderData.(*providerData)
+	providerData, ok := req.ProviderData.(*model.ProviderData)
 
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -118,21 +119,21 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	// delimiter
-	delimiter := d.providerData.contextClient.GetDelimiter()
+	delimiter := d.providerData.ProviderConfig.GetDelimiter()
 	config.Delimiter = types.StringValue(delimiter)
 
 	// enabled
-	enabled := d.providerData.contextClient.IsEnabled()
+	enabled := d.providerData.ProviderConfig.IsEnabled()
 	config.Enabled = types.BoolValue(enabled)
 
 	// properties
-	properties := d.providerData.contextClient.GetProperties()
-	propMap := make(map[string]FrameworkProperty, len(properties))
+	properties := d.providerData.ProviderConfig.GetProperties()
+	propMap := make(map[string]model.FrameworkProperty, len(properties))
 	for _, v := range properties {
-		propMap[v.Name] = FrameworkProperty{}.FromClientProperty(v)
+		propMap[v.Name] = model.FrameworkProperty{}.FromConfigProperty(v)
 	}
 
-	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: FrameworkProperty{}.Types()}, propMap)
+	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: model.FrameworkProperty{}.Types()}, propMap)
 	resp.Diagnostics.Append(diag...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -140,7 +141,7 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	config.Properties = props
 
 	// propertyOrder
-	propertyOrder := d.providerData.contextClient.GetPropertyOrder()
+	propertyOrder := d.providerData.ProviderConfig.GetPropertyOrder()
 	propOrder, diag := types.ListValueFrom(ctx, types.StringType, propertyOrder)
 	resp.Diagnostics.Append(diag...)
 	if resp.Diagnostics.HasError() {
@@ -149,19 +150,19 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	config.PropertyOrder = propOrder
 
 	// replaceCharsRegex
-	replaceRegexChars := d.providerData.contextClient.GetReplaceCharsRegex()
+	replaceRegexChars := d.providerData.ProviderConfig.GetReplaceCharsRegex()
 	config.ReplaceCharsRegex = types.StringValue(replaceRegexChars)
 
 	// tagsKeyCase
-	tagsKeyCase := d.providerData.contextClient.GetTagsKeyCase()
+	tagsKeyCase := d.providerData.ProviderConfig.GetTagsKeyCase()
 	config.TagsKeyCase = types.StringValue(tagsKeyCase)
 
 	// tagsValueCase
-	tagsValueCase := d.providerData.contextClient.GetTagsValueCase()
+	tagsValueCase := d.providerData.ProviderConfig.GetTagsValueCase()
 	config.TagsValueCase = types.StringValue(tagsValueCase)
 
 	// values
-	values := d.providerData.contextClient.GetValues()
+	values := d.providerData.ProviderConfig.GetValues()
 	vals, diag := types.MapValueFrom(ctx, types.StringType, values)
 	resp.Diagnostics.Append(diag...)
 	if resp.Diagnostics.HasError() {

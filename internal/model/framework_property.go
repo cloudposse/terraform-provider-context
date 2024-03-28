@@ -1,7 +1,6 @@
-package provider
+package model
 
 import (
-	"github.com/cloudposse/terraform-provider-context/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -14,30 +13,30 @@ type FrameworkProperty struct {
 	ValidationRegex types.String `tfsdk:"validation_regex"`
 }
 
-func (p *FrameworkProperty) ToModel(name string) (*client.Property, error) {
-	options := []func(*client.Property){}
+func (p *FrameworkProperty) ToModel(name string) (*Property, error) {
+	options := []func(*Property){}
 
 	if !p.Required.IsNull() && !p.Required.IsUnknown() && p.Required.ValueBool() {
-		options = append(options, client.WithRequired())
+		options = append(options, WithRequired())
 	}
 
 	if !p.IncludeInTags.IsNull() && !p.IncludeInTags.IsUnknown() && !p.IncludeInTags.ValueBool() {
-		options = append(options, client.WithExcludeFromTags())
+		options = append(options, WithExcludeFromTags())
 	}
 
 	if !p.MinLength.IsNull() && !p.MinLength.IsUnknown() {
-		options = append(options, client.WithMinLength(int(p.MinLength.ValueInt64())))
+		options = append(options, WithMinLength(int(p.MinLength.ValueInt64())))
 	}
 
 	if !p.MaxLength.IsNull() && !p.MaxLength.IsUnknown() {
-		options = append(options, client.WithMaxLength(int(p.MaxLength.ValueInt64())))
+		options = append(options, WithMaxLength(int(p.MaxLength.ValueInt64())))
 	}
 
 	if !p.ValidationRegex.IsNull() && !p.ValidationRegex.IsUnknown() {
-		options = append(options, client.WithValidationRegex(p.ValidationRegex.ValueString()))
+		options = append(options, WithValidationRegex(p.ValidationRegex.ValueString()))
 	}
 
-	return client.NewProperty(name, options...), nil
+	return NewProperty(name, options...), nil
 }
 
 func (p FrameworkProperty) Types() map[string]attr.Type {
@@ -50,7 +49,7 @@ func (p FrameworkProperty) Types() map[string]attr.Type {
 	}
 }
 
-func (p FrameworkProperty) FromClientProperty(cp client.Property) FrameworkProperty {
+func (p FrameworkProperty) FromConfigProperty(cp Property) FrameworkProperty {
 	return FrameworkProperty{
 		IncludeInTags:   types.BoolValue(cp.IncludeInTags),
 		MaxLength:       types.Int64Value(int64(cp.MaxLength)),

@@ -1,4 +1,4 @@
-package client
+package model
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 )
 
-type Client struct {
+type ProviderConfig struct {
 	delimiter         string
 	enabled           bool
 	properties        []Property
@@ -31,21 +31,21 @@ type DelmitedLabelOptions struct {
 }
 
 // GetDelimiter returns the delimiter from the context.
-func (c *Client) GetDelimiter() string {
+func (c *ProviderConfig) GetDelimiter() string {
 	return c.delimiter
 }
 
 // IsEnabled returns a boolean indicating whether the context is enabled.
-func (c *Client) IsEnabled() bool {
+func (c *ProviderConfig) IsEnabled() bool {
 	return c.enabled
 }
 
 // GetProperties returns the properties from the context.
-func (c *Client) GetProperties() []Property {
+func (c *ProviderConfig) GetProperties() []Property {
 	return c.properties
 }
 
-func (c *Client) ValidateProperties(values map[string]string) []error {
+func (c *ProviderConfig) ValidateProperties(values map[string]string) []error {
 	errors := []error{}
 	for _, p := range c.properties {
 		errors = append(errors, p.Validate(values[p.Name])...)
@@ -54,7 +54,7 @@ func (c *Client) ValidateProperties(values map[string]string) []error {
 }
 
 // GetPropertyNames returns the names of the properties from the context.
-func (c *Client) GetPropertyNames([]Property) []string {
+func (c *ProviderConfig) GetPropertyNames([]Property) []string {
 	names := []string{}
 	for _, p := range c.properties {
 		names = append(names, p.Name)
@@ -64,7 +64,7 @@ func (c *Client) GetPropertyNames([]Property) []string {
 
 // GetMergedDelimiter merges the delimiter from the context with the delimiter passed in to the function. Used when
 // creating a label.
-func (c *Client) GetMergedDelimiter(delimiter *string) string {
+func (c *ProviderConfig) GetMergedDelimiter(delimiter *string) string {
 	mergedDelimiter := c.delimiter
 	if delimiter != nil {
 		mergedDelimiter = *delimiter
@@ -75,7 +75,7 @@ func (c *Client) GetMergedDelimiter(delimiter *string) string {
 
 // GetMergedReplaceCharsRegex merges the replaceCharsRegex from the context with the replaceCharsRegex passed in to the
 // function. Used when creating a label.
-func (c *Client) GetMergedReplaceCharsRegex(regex *string) string {
+func (c *ProviderConfig) GetMergedReplaceCharsRegex(regex *string) string {
 	mergedRegex := c.replaceCharsRegex
 	if regex != nil {
 		mergedRegex = *regex
@@ -86,7 +86,7 @@ func (c *Client) GetMergedReplaceCharsRegex(regex *string) string {
 
 // GetMergedPropertyNames returns either the names of the properties from the context or the names of the properties
 // passed in to the function to derive the properties to use for creating a label.
-func (c *Client) GetMergedPropertyNames(propertyNames []string) []string {
+func (c *ProviderConfig) GetMergedPropertyNames(propertyNames []string) []string {
 	if len(propertyNames) > 0 {
 		return propertyNames
 	}
@@ -94,13 +94,13 @@ func (c *Client) GetMergedPropertyNames(propertyNames []string) []string {
 }
 
 // GetPropertyOrder returns the propertyOrder from the context.
-func (c *Client) GetPropertyOrder() []string {
+func (c *ProviderConfig) GetPropertyOrder() []string {
 	return c.propertyOrder
 }
 
 // getMergedPropertyOrder returns either the names in order of the propertyOrder from the context or the propertyOrder
 // passed in to the function to derive the order of properties to use for creating a label.
-func (c *Client) GetMergedPropertyOrder(propertyOrder []string) []string {
+func (c *ProviderConfig) GetMergedPropertyOrder(propertyOrder []string) []string {
 	if len(propertyOrder) > 0 {
 		return propertyOrder
 	}
@@ -108,22 +108,22 @@ func (c *Client) GetMergedPropertyOrder(propertyOrder []string) []string {
 }
 
 // GetReplaceCharsRegex returns the replaceCharsRegex from the context.
-func (c *Client) GetReplaceCharsRegex() string {
+func (c *ProviderConfig) GetReplaceCharsRegex() string {
 	return c.replaceCharsRegex
 }
 
 // GetTagsKeyCase returns the tagsKeyCase from the context.
-func (c *Client) GetTagsKeyCase() string {
+func (c *ProviderConfig) GetTagsKeyCase() string {
 	return c.tagsKeyCase.String()
 }
 
 // GetTagsValueCase returns the tagsValueCase from the context.
-func (c *Client) GetTagsValueCase() string {
+func (c *ProviderConfig) GetTagsValueCase() string {
 	return c.tagsValueCase.String()
 }
 
 // GetTagsKeyCase returns the tagsKeyCase from the context or the keyCase passed in to the function.
-func (c *Client) GetMergedTagsKeyCase(keyCase *cases.Case) cases.Case {
+func (c *ProviderConfig) GetMergedTagsKeyCase(keyCase *cases.Case) cases.Case {
 	if keyCase != nil {
 		return *keyCase
 	}
@@ -131,7 +131,7 @@ func (c *Client) GetMergedTagsKeyCase(keyCase *cases.Case) cases.Case {
 }
 
 // GetTagsValueCase returns the tagsValueCase from the context or the valueCase passed in to the function.
-func (c *Client) GetMergedTagsValueCase(valueCase *cases.Case) cases.Case {
+func (c *ProviderConfig) GetMergedTagsValueCase(valueCase *cases.Case) cases.Case {
 	if valueCase != nil {
 		return *valueCase
 	}
@@ -139,13 +139,13 @@ func (c *Client) GetMergedTagsValueCase(valueCase *cases.Case) cases.Case {
 }
 
 // GetValues returns the values from the context.
-func (c *Client) GetValues() map[string]string {
+func (c *ProviderConfig) GetValues() map[string]string {
 	return c.values
 }
 
 // getMergedValues merges the values from the context with the values passed in to the function to derive the values to
 // use when creating a label.
-func (c *Client) GetMergedValues(values map[string]string) map[string]string {
+func (c *ProviderConfig) GetMergedValues(values map[string]string) map[string]string {
 	mergedValues := make(map[string]string, len(c.values))
 	for key, value := range c.values {
 		mergedValues[key] = value
@@ -159,7 +159,7 @@ func (c *Client) GetMergedValues(values map[string]string) map[string]string {
 }
 
 // getOrderedValues returns the values in the order of the propertyOrder for use in creating a delimited label.
-func (c *Client) getOrderedValues(propertyOrder []string, values map[string]string) []string {
+func (c *ProviderConfig) getOrderedValues(propertyOrder []string, values map[string]string) []string {
 	orderedValues := []string{}
 	for _, prop := range propertyOrder {
 		orderedValues = append(orderedValues, values[prop])
@@ -193,7 +193,7 @@ func getRedactedLabel(label string, regex string) (string, error) {
 
 // GetDelimitedLabel returns a delimited label based on the properties and values in the context and overridden by the
 // delimiter, properties and values passed into the function.
-func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
+func (c *ProviderConfig) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
 	regex := c.GetMergedReplaceCharsRegex(replaceCharsRegex)
 	validationErrors := c.ValidateProperties(mergedValues)
@@ -224,7 +224,7 @@ func (c *Client) GetDelimitedLabel(delimiter *string, properties []string, prope
 
 // GetTemplatedLabel returns a label from the template string and based on the properties and values in the context and
 // overridden by the delimiter, properties and values passed into the function.
-func (c *Client) GetTemplatedLabel(templateString string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
+func (c *ProviderConfig) GetTemplatedLabel(templateString string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
 	regex := c.GetMergedReplaceCharsRegex(replaceCharsRegex)
 	validationErrors := c.ValidateProperties(mergedValues)
@@ -259,7 +259,7 @@ func getCasedTag(key string, value string, keyCase cases.Case, valueCase cases.C
 	return keyValue, valueValue
 }
 
-func (c *Client) GetTags(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) (map[string]string, []error) {
+func (c *ProviderConfig) GetTags(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) (map[string]string, []error) {
 	tags := map[string]string{}
 	mergedValues := c.GetMergedValues(values)
 	validationErrors := c.ValidateProperties(mergedValues)
@@ -279,7 +279,7 @@ func (c *Client) GetTags(values map[string]string, tagsKeyCase *cases.Case, tags
 	return tags, nil
 }
 
-func (c *Client) GetTagsAsList(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) ([]map[string]string, []error) {
+func (c *ProviderConfig) GetTagsAsList(values map[string]string, tagsKeyCase *cases.Case, tagsValueCase *cases.Case) ([]map[string]string, []error) {
 	tags, err := c.GetTags(values, tagsKeyCase, tagsValueCase)
 	if err != nil {
 		return nil, err
@@ -300,9 +300,9 @@ func (c *Client) GetTagsAsList(values map[string]string, tagsKeyCase *cases.Case
 	return tagsList, nil
 }
 
-// NewClient is the factory for creating a new context client.
-func NewClient(properties []Property, propertyOrder []string, values map[string]string, options ...func(*Client)) (*Client, error) {
-	cc := &Client{
+// NewProviderConfig is the factory for creating a new provider config.
+func NewProviderConfig(properties []Property, propertyOrder []string, values map[string]string, options ...func(*ProviderConfig)) (*ProviderConfig, error) {
+	cc := &ProviderConfig{
 		delimiter:         "-",
 		enabled:           true,
 		properties:        properties,
@@ -322,35 +322,35 @@ func NewClient(properties []Property, propertyOrder []string, values map[string]
 	return cc, nil
 }
 
-// WithProperties is a functional option for setting the properties in the context when creating a new context client.
-func WithEnabled(enabled bool) func(*Client) {
-	return func(obj *Client) {
+// WithProperties is a functional option for setting the properties in the context when creating a new provider config.
+func WithEnabled(enabled bool) func(*ProviderConfig) {
+	return func(obj *ProviderConfig) {
 		obj.enabled = enabled
 	}
 }
 
-// WithProperties is a functional option for setting the properties in the context when creating a new context client.
-func WithDelimiter(delimiter string) func(*Client) {
-	return func(obj *Client) {
+// WithProperties is a functional option for setting the properties in the context when creating a new provider config.
+func WithDelimiter(delimiter string) func(*ProviderConfig) {
+	return func(obj *ProviderConfig) {
 		obj.delimiter = delimiter
 	}
 }
 
-// WithReplaceCharsRegex is a functional option for setting the properties in the context when creating a new context client.
-func WithReplaceCharsRegex(regex string) func(*Client) {
-	return func(obj *Client) {
+// WithReplaceCharsRegex is a functional option for setting the properties in the context when creating a new provider config.
+func WithReplaceCharsRegex(regex string) func(*ProviderConfig) {
+	return func(obj *ProviderConfig) {
 		obj.replaceCharsRegex = regex
 	}
 }
 
-func WithTagsKeyCase(keyCase cases.Case) func(*Client) {
-	return func(obj *Client) {
+func WithTagsKeyCase(keyCase cases.Case) func(*ProviderConfig) {
+	return func(obj *ProviderConfig) {
 		obj.tagsKeyCase = keyCase
 	}
 }
 
-func WithTagsValueCase(valueCase cases.Case) func(*Client) {
-	return func(obj *Client) {
+func WithTagsValueCase(valueCase cases.Case) func(*ProviderConfig) {
+	return func(obj *ProviderConfig) {
 		obj.tagsValueCase = valueCase
 	}
 }
