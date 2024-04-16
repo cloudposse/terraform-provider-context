@@ -70,7 +70,7 @@ func validateMaxLength(maxLength int, value string, propertyName string) error {
 }
 
 func validateRegex(regex string, value string, propertyName string) error {
-	if regex == "" {
+	if regex == "" || value == "" {
 		return nil
 	}
 
