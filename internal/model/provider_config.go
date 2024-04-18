@@ -162,7 +162,9 @@ func (c *ProviderConfig) GetMergedValues(values map[string]string) map[string]st
 func (c *ProviderConfig) getOrderedValues(propertyOrder []string, values map[string]string) []string {
 	orderedValues := []string{}
 	for _, prop := range propertyOrder {
-		orderedValues = append(orderedValues, values[prop])
+		if values[prop] != "" {
+			orderedValues = append(orderedValues, values[prop])
+		}
 	}
 	return orderedValues
 }
