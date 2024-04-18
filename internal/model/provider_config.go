@@ -275,7 +275,9 @@ func (c *ProviderConfig) GetTags(values map[string]string, tagsKeyCase *cases.Ca
 	for _, p := range c.properties {
 		if p.IncludeInTags {
 			key, value := getCasedTag(p.Name, mergedValues[p.Name], megedTagsKeyCase, mergedTagsValueCase)
-			tags[key] = value
+			if value != "" {
+				tags[key] = value
+			}
 		}
 	}
 	return tags, nil
