@@ -8,8 +8,14 @@ on:
     paths-ignore:
       - "README.md"
   push:
+    branches:
+      - main
+      - release/v*
     paths-ignore:
-      - "README.md"
+      - '.github/**'
+      - 'docs/**'
+      - 'examples/**'
+      - 'test/**'
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -82,3 +88,11 @@ jobs:
           TF_ACC: "1"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
+
+  release:
+    needs: test
+    if: github.event_name == 'push'
+    uses: cloudposse/.github/.github/workflows/shared-go-auto-release.yml@main
+    with:
+      publish: true
+    secrets: inherit
