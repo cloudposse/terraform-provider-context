@@ -8,12 +8,22 @@ on:
     paths-ignore:
       - "README.md"
   push:
+    branches:
+      - main
+      - release/v*
     paths-ignore:
-      - "README.md"
+      - '.github/**'
+      - 'docs/**'
+      - 'examples/**'
+      - 'test/**'
 
 # Testing only needs permissions to read the repository contents.
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # Ensure project builds before running testing matrix
@@ -33,6 +43,7 @@ jobs:
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
+          skip-pkg-cache: true
 
   generate:
     runs-on: ubuntu-latest
@@ -82,3 +93,11 @@ jobs:
           TF_ACC: "1"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
+
+  release:
+    needs: test
+    if: github.event_name == 'push'
+    uses: cloudposse/.github/.github/workflows/shared-go-auto-release.yml@main
+    with:
+      publish: true
+    secrets: inherit
