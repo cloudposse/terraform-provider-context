@@ -39,4 +39,6 @@ Optional:
 - `max_length` (Number) The maximum length of the property.
 - `min_length` (Number) The minimum length of the property.
 - `required` (Boolean) A flag to indicate if the property is required.
+- `tags_key_case` (String) The case to use for the key of this property in tags. If not set, uses the provider's tags_key_case.
+- `tags_value_case` (String) The case to use for the value of this property in tags. If not set, uses the provider's tags_value_case.
 - `validation_regex` (String) A regular expression to validate the property.

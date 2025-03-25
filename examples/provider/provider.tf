@@ -20,14 +20,14 @@ provider "context" {
     }
     Stage = {
       # Override both key and value casing for this property
-      tags_key_case = "snake"
+      tags_key_case   = "snake"
       tags_value_case = "title"
     }
     Name = {}
   }
 
   # Default casing for all properties (unless overridden at property level)
-  tags_key_case = "title"
+  tags_key_case   = "title"
   tags_value_case = "none"
 
   values = {
