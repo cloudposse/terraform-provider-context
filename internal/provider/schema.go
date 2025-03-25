@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dsschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -36,6 +37,16 @@ func getPropertiesSchema() schema.NestedAttributeObject {
 				MarkdownDescription: "A regular expression to validate the property.",
 				Optional:            true,
 			},
+			"tags_key_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the key of this property in tags. If not set, uses the provider's tags_key_case.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
+			"tags_value_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the value of this property in tags. If not set, uses the provider's tags_value_case.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
 		},
 	}
 }
@@ -61,6 +72,14 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 			},
 			"validation_regex": dsschema.StringAttribute{
 				MarkdownDescription: "A regular expression to validate the property.",
+				Optional:            true,
+			},
+			"tags_key_case": dsschema.StringAttribute{
+				MarkdownDescription: "The case to use for the key of this property in tags. If not set, uses the provider's tags_key_case.",
+				Optional:            true,
+			},
+			"tags_value_case": dsschema.StringAttribute{
+				MarkdownDescription: "The case to use for the value of this property in tags. If not set, uses the provider's tags_value_case.",
 				Optional:            true,
 			},
 		},

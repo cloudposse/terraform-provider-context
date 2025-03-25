@@ -8,11 +8,23 @@ terraform {
 
 provider "context" {
   properties = {
-    Namespace = { required = true }
-    Tenant    = { required = true }
-    Stage     = {}
-    Name      = {}
+    Namespace = {
+      required      = true
+      tags_key_case = "upper"
+    }
+    Tenant = {
+      required        = true
+      tags_value_case = "lower"
+    }
+    Stage = {
+      tags_key_case   = "snake"
+      tags_value_case = "title"
+    }
+    Name = {}
   }
+
+  tags_key_case   = "title"
+  tags_value_case = "none"
 
   values = {
     "Namespace" = "cp"
@@ -32,4 +44,8 @@ locals {
 
 output "values" {
   value = local.context.values.Namespace
+}
+
+output "tags" {
+  value = local.context.tags
 }

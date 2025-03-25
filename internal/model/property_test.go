@@ -3,6 +3,7 @@ package model
 import (
 	"testing"
 
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -129,4 +130,30 @@ func TestPropertyExcludeFromTags(t *testing.T) {
 
 	actual := p.IncludeInTags
 	assert.Equal(t, false, actual)
+}
+
+func TestPropertyTagsKeyCase(t *testing.T) {
+	p := NewProperty("test", WithPropertyTagsKeyCase(cases.UpperCase))
+
+	assert.NotNil(t, p.TagsKeyCase)
+	assert.Equal(t, cases.UpperCase, *p.TagsKeyCase)
+}
+
+func TestPropertyTagsValueCase(t *testing.T) {
+	p := NewProperty("test", WithPropertyTagsValueCase(cases.LowerCase))
+
+	assert.NotNil(t, p.TagsValueCase)
+	assert.Equal(t, cases.LowerCase, *p.TagsValueCase)
+}
+
+func TestPropertyTagsKeyCaseNil(t *testing.T) {
+	p := NewProperty("test")
+
+	assert.Nil(t, p.TagsKeyCase)
+}
+
+func TestPropertyTagsValueCaseNil(t *testing.T) {
+	p := NewProperty("test")
+
+	assert.Nil(t, p.TagsValueCase)
 }

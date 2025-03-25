@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 )
 
 type Property struct {
@@ -13,6 +15,8 @@ type Property struct {
 	Name            string
 	Required        bool
 	ValidationRegex string
+	TagsKeyCase     *cases.Case
+	TagsValueCase   *cases.Case
 }
 
 func (p *Property) Validate(value string) []error {
@@ -95,6 +99,8 @@ func NewProperty(name string, options ...func(*Property)) *Property {
 		Name:            name,
 		Required:        false,
 		ValidationRegex: "",
+		TagsKeyCase:     nil,
+		TagsValueCase:   nil,
 	}
 
 	for _, option := range options {
@@ -131,5 +137,17 @@ func WithMaxLength(maxLength int) func(*Property) {
 func WithValidationRegex(regex string) func(*Property) {
 	return func(obj *Property) {
 		obj.ValidationRegex = regex
+	}
+}
+
+func WithPropertyTagsKeyCase(keyCase cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsKeyCase = &keyCase
+	}
+}
+
+func WithPropertyTagsValueCase(valueCase cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsValueCase = &valueCase
 	}
 }
