@@ -23,8 +23,8 @@ provider "context" {
 }
 
 data "context_config" "example" {
-
 }
+
 
 locals {
   context = data.context_config.example

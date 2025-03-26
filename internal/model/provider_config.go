@@ -2,6 +2,7 @@ package model
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -12,6 +13,8 @@ import (
 	"github.com/cloudposse/terraform-provider-context/pkg/slice"
 	"github.com/cloudposse/terraform-provider-context/pkg/stringHelpers"
 )
+
+var ErrLabelTooLong = errors.New("label exceeds maximum length")
 
 type ProviderConfig struct {
 	delimiter         string
@@ -169,17 +172,6 @@ func (c *ProviderConfig) getOrderedValues(propertyOrder []string, values map[str
 	return orderedValues
 }
 
-func getTruncatedLabel(label string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
-	if maxLength > 0 && len(label) > maxLength {
-		if truncateIfExceedsMaxLength {
-			label = stringHelpers.TruncateWithHash(label, maxLength)
-		} else {
-			return "", []error{fmt.Errorf("label %s exceeds maximum length of %d", label, maxLength)}
-		}
-	}
-	return label, nil
-}
-
 func getRedactedLabel(label string, regex string) (string, error) {
 	if regex == "" {
 		return label, nil
@@ -193,8 +185,7 @@ func getRedactedLabel(label string, regex string) (string, error) {
 	return replaced, nil
 }
 
-// GetDelimitedLabel returns a delimited label based on the properties and values in the context and overridden by the
-// delimiter, properties and values passed into the function.
+//nolint:revive
 func (c *ProviderConfig) GetDelimitedLabel(delimiter *string, properties []string, propertyOrder []string, values map[string]string, replaceCharsRegex *string, maxLength int, truncateIfExceedsMaxLength bool) (string, []error) {
 	mergedValues := c.GetMergedValues(values)
 	regex := c.GetMergedReplaceCharsRegex(replaceCharsRegex)
@@ -221,7 +212,14 @@ func (c *ProviderConfig) GetDelimitedLabel(delimiter *string, properties []strin
 		return "", []error{err}
 	}
 
-	return getTruncatedLabel(redactedLabel, maxLength, truncateIfExceedsMaxLength)
+	if maxLength > 0 && len(redactedLabel) > maxLength {
+		if !truncateIfExceedsMaxLength {
+			return "", []error{fmt.Errorf("%w: %s (max: %d)", ErrLabelTooLong, redactedLabel, maxLength)}
+		}
+		return stringHelpers.TruncateWithHash(redactedLabel, maxLength), nil
+	}
+
+	return redactedLabel, nil
 }
 
 // GetTemplatedLabel returns a label from the template string and based on the properties and values in the context and
@@ -251,7 +249,14 @@ func (c *ProviderConfig) GetTemplatedLabel(templateString string, values map[str
 		return "", []error{err}
 	}
 
-	return getTruncatedLabel(redactedLabel, maxLength, truncateIfExceedsMaxLength)
+	if maxLength > 0 && len(redactedLabel) > maxLength {
+		if !truncateIfExceedsMaxLength {
+			return "", []error{fmt.Errorf("%w: %s (max: %d)", ErrLabelTooLong, redactedLabel, maxLength)}
+		}
+		return stringHelpers.TruncateWithHash(redactedLabel, maxLength), nil
+	}
+
+	return redactedLabel, nil
 }
 
 func getCasedTag(key string, value string, keyCase cases.Case, valueCase cases.Case) (string, string) {
@@ -265,7 +270,7 @@ func (c *ProviderConfig) GetTags(values map[string]string, tagsKeyCase *cases.Ca
 	tags := map[string]string{}
 	mergedValues := c.GetMergedValues(values)
 	validationErrors := c.ValidateProperties(mergedValues)
-	megedTagsKeyCase := c.GetMergedTagsKeyCase(tagsKeyCase)
+	mergedTagsKeyCase := c.GetMergedTagsKeyCase(tagsKeyCase)
 	mergedTagsValueCase := c.GetMergedTagsValueCase(tagsValueCase)
 
 	if len(validationErrors) > 0 {
@@ -273,11 +278,21 @@ func (c *ProviderConfig) GetTags(values map[string]string, tagsKeyCase *cases.Ca
 	}
 
 	for _, p := range c.properties {
-		if p.IncludeInTags {
-			key, value := getCasedTag(p.Name, mergedValues[p.Name], megedTagsKeyCase, mergedTagsValueCase)
-			if value != "" {
-				tags[key] = value
-			}
+		if !p.IncludeInTags {
+			continue
+		}
+		// Use property-specific cases if available, otherwise use merged cases
+		keyCase := mergedTagsKeyCase
+		if p.TagsKeyCase != nil {
+			keyCase = *p.TagsKeyCase
+		}
+		valueCase := mergedTagsValueCase
+		if p.TagsValueCase != nil {
+			valueCase = *p.TagsValueCase
+		}
+		key, value := getCasedTag(p.Name, mergedValues[p.Name], keyCase, valueCase)
+		if value != "" {
+			tags[key] = value
 		}
 	}
 	return tags, nil

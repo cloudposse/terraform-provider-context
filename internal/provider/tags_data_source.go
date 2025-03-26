@@ -59,14 +59,18 @@ func (d *TagsDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				ElementType:         types.MapType{ElemType: types.StringType},
 			},
 			"tags_key_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"tags_value_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "Map of values to override or add to the context when creating the label.",
@@ -108,52 +112,46 @@ func (d *TagsDataSource) handleValidationErrors(resp *datasource.ReadResponse, e
 	}
 }
 
-func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config TagsDataSourceModel
-
-	// Read Terraform configuration data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-
+func (d *TagsDataSource) getLocalValues(ctx context.Context, config *TagsDataSourceModel, resp *datasource.ReadResponse) map[string]string {
 	localValues, diags := framework.FromFrameworkMap[string](ctx, config.Values)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		return
+		return nil
 	}
+	return localValues
+}
 
-	var localTagsKeyCase *cases.Case
+func (d *TagsDataSource) getLocalTagsKeyCase(config *TagsDataSourceModel, resp *datasource.ReadResponse) *cases.Case {
 	if !config.TagsKeyCase.IsNull() {
 		tagsKeyCase, err := cases.FromString(*config.TagsKeyCase.ValueStringPointer())
-		localTagsKeyCase = &tagsKeyCase
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags_key_case to model", err.Error())
-			return
+			return nil
 		}
+		return &tagsKeyCase
 	}
+	return nil
+}
 
-	var localTagsValueCase *cases.Case
+func (d *TagsDataSource) getLocalTagsValueCase(config *TagsDataSourceModel, resp *datasource.ReadResponse) *cases.Case {
 	if !config.TagsValueCase.IsNull() {
 		tagsValueCase, err := cases.FromString(*config.TagsKeyCase.ValueStringPointer())
-		localTagsValueCase = &tagsValueCase
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags_value_case to model", err.Error())
-			return
+			return nil
 		}
+		return &tagsValueCase
 	}
+	return nil
+}
 
+//nolint:revive
+func (d *TagsDataSource) setTags(ctx context.Context, config *TagsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
 	tags, errs := d.providerData.ProviderConfig.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	tagsList, errs := d.providerData.ProviderConfig.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
-	d.handleValidationErrors(resp, errs)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tagsAsHash := mapHelpers.HashMap(tags)
-	config.Id = types.StringValue(tagsAsHash)
 
 	frameworkTags, diags := types.MapValueFrom(ctx, types.StringType, tags)
 	resp.Diagnostics.Append(diags...)
@@ -162,12 +160,57 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 	config.Tags = frameworkTags
 
+	tagsAsHash := mapHelpers.HashMap(tags)
+	config.Id = types.StringValue(tagsAsHash)
+}
+
+//nolint:revive
+func (d *TagsDataSource) setTagsList(ctx context.Context, config *TagsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
+	tagsList, errs := d.providerData.ProviderConfig.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
+	d.handleValidationErrors(resp, errs)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	frameworkTagsAsList, diags := types.ListValueFrom(ctx, types.MapType{ElemType: types.StringType}, tagsList)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	config.TagsAsList = frameworkTagsAsList
+}
+
+//nolint:gocritic
+func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config TagsDataSourceModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
+	localValues := d.getLocalValues(ctx, &config, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	localTagsKeyCase := d.getLocalTagsKeyCase(&config, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	localTagsValueCase := d.getLocalTagsValueCase(&config, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	d.setTags(ctx, &config, resp, localValues, localTagsKeyCase, localTagsValueCase)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	d.setTagsList(ctx, &config, resp, localValues, localTagsKeyCase, localTagsValueCase)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	tflog.Trace(ctx, "created tags data source")
 

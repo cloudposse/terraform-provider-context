@@ -69,14 +69,18 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				Optional:            true,
 			},
 			"tags_key_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"tags_value_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "A map of values to use for labels created by the provider.",
@@ -87,21 +91,11 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 	}
 }
 
-func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var providerConfigModel providerConfigModel
-	options := []func(*model.ProviderConfig){}
-
-	// Get the configuration from the request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfigModel)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Convert config to native go types
+func (p *ContextProvider) getConfigProperties(ctx context.Context, providerConfigModel *providerConfigModel, resp *provider.ConfigureResponse) []model.Property {
 	properties := map[string]model.FrameworkProperty{}
 	resp.Diagnostics.Append(providerConfigModel.Properties.ElementsAs(ctx, &properties, false)...)
 	if resp.Diagnostics.HasError() {
-		return
+		return nil
 	}
 
 	configProperties := []model.Property{}
@@ -109,22 +103,33 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		property, err := prop.ToModel(k)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert property to model", err.Error())
-			return
+			return nil
 		}
 		configProperties = append(configProperties, *property)
 	}
+	return configProperties
+}
 
+func (p *ContextProvider) getPropertyOrder(ctx context.Context, providerConfigModel *providerConfigModel, resp *provider.ConfigureResponse) []string {
 	propertyOrder := []string{}
 	resp.Diagnostics.Append(providerConfigModel.PropertyOrder.ElementsAs(ctx, &propertyOrder, false)...)
 	if resp.Diagnostics.HasError() {
-		return
+		return nil
 	}
+	return propertyOrder
+}
 
+func (p *ContextProvider) getValues(ctx context.Context, providerConfigModel *providerConfigModel, resp *provider.ConfigureResponse) map[string]string {
 	values := map[string]string{}
 	resp.Diagnostics.Append(providerConfigModel.Values.ElementsAs(ctx, &values, false)...)
 	if resp.Diagnostics.HasError() {
-		return
+		return nil
 	}
+	return values
+}
+
+func (p *ContextProvider) getOptions(providerConfigModel *providerConfigModel, resp *provider.ConfigureResponse) []func(*model.ProviderConfig) {
+	options := []func(*model.ProviderConfig){}
 
 	if !providerConfigModel.Enabled.IsNull() {
 		options = append(options, model.WithEnabled(providerConfigModel.Enabled.ValueBool()))
@@ -142,7 +147,7 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		keyCase, err := cases.FromString(providerConfigModel.TagsKeyCase.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags key case", err.Error())
-			return
+			return nil
 		}
 		options = append(options, model.WithTagsKeyCase(keyCase))
 	}
@@ -151,9 +156,59 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		valueCase, err := cases.FromString(providerConfigModel.TagsValueCase.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags value case", err.Error())
-			return
+			return nil
 		}
 		options = append(options, model.WithTagsValueCase(valueCase))
+	}
+
+	return options
+}
+
+func (p *ContextProvider) createAndValidateProviderConfig(configProperties []model.Property, propertyOrder []string, values map[string]string, options []func(*model.ProviderConfig), resp *provider.ConfigureResponse) *model.ProviderData {
+	providerConfig, err := model.NewProviderConfig(configProperties, propertyOrder, values, options...)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to create provider config", err.Error())
+		return nil
+	}
+
+	if errs := providerConfig.ValidateProperties(values); len(errs) > 0 {
+		for _, err := range errs {
+			resp.Diagnostics.AddError("Validation Error", err.Error())
+		}
+		return nil
+	}
+
+	return &model.ProviderData{
+		ProviderConfig: providerConfig,
+	}
+}
+
+func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var providerConfigModel providerConfigModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfigModel)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	configProperties := p.getConfigProperties(ctx, &providerConfigModel, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	propertyOrder := p.getPropertyOrder(ctx, &providerConfigModel, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	values := p.getValues(ctx, &providerConfigModel, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	options := p.getOptions(&providerConfigModel, resp)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	tflog.Debug(ctx, "Data received from the configuration", map[string]any{
@@ -167,18 +222,11 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		"values":              values,
 	})
 
-	// Create the context providerConfig
-	providerConfig, err := model.NewProviderConfig(configProperties, propertyOrder, values, options...)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to create provider config", err.Error())
+	providerData := p.createAndValidateProviderConfig(configProperties, propertyOrder, values, options, resp)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	providerData := &model.ProviderData{
-		ProviderConfig: providerConfig,
-	}
-
-	// Set the provider data in the response
 	p.providerData = providerData
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData

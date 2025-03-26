@@ -1,10 +1,16 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 )
+
+// PropertyOption is a function that modifies a Property.
+type PropertyOption func(*Property)
 
 type Property struct {
 	IncludeInTags   bool
@@ -12,8 +18,18 @@ type Property struct {
 	MinLength       int
 	Name            string
 	Required        bool
+	TagsKeyCase     *cases.Case
+	TagsValueCase   *cases.Case
 	ValidationRegex string
 }
+
+var (
+	ErrPropertyRequired = errors.New("property is required")
+	ErrValueTooShort    = errors.New("value is less than minimum length")
+	ErrValueTooLong     = errors.New("value is greater than maximum length")
+	ErrInvalidRegex     = errors.New("regex is invalid")
+	ErrRegexMismatch    = errors.New("value does not match regex")
+)
 
 func (p *Property) Validate(value string) []error {
 	errors := []error{}
@@ -39,9 +55,8 @@ func (p *Property) Validate(value string) []error {
 
 func validateRequired(required bool, value string, propertyName string) error {
 	if required && strings.TrimSpace(value) == "" {
-		return fmt.Errorf("value for property %s is required", propertyName)
+		return fmt.Errorf("%w: value for property %s", ErrPropertyRequired, propertyName)
 	}
-
 	return nil
 }
 
@@ -51,9 +66,8 @@ func validateMinLength(minLength int, value string, propertyName string) error {
 	}
 
 	if len(value) < minLength {
-		return fmt.Errorf("value %s for property %s is less than the minimum length of %d", value, propertyName, minLength)
+		return fmt.Errorf("%w: value %s for property %s is less than %d", ErrValueTooShort, value, propertyName, minLength)
 	}
-
 	return nil
 }
 
@@ -63,9 +77,8 @@ func validateMaxLength(maxLength int, value string, propertyName string) error {
 	}
 
 	if len(value) > maxLength {
-		return fmt.Errorf("value %s for property %s is greater than the maximum length of %d", value, propertyName, maxLength)
+		return fmt.Errorf("%w: value %s for property %s is greater than %d", ErrValueTooLong, value, propertyName, maxLength)
 	}
-
 	return nil
 }
 
@@ -75,25 +88,25 @@ func validateRegex(regex string, value string, propertyName string) error {
 	}
 
 	r, err := regexp.Compile(regex)
-
 	if err != nil {
-		return fmt.Errorf("regex %s for property %s is invalid", regex, propertyName)
+		return fmt.Errorf("%w: %s for property %s", ErrInvalidRegex, regex, propertyName)
 	}
 
 	if !r.MatchString(value) {
-		return fmt.Errorf("value %s for property %s does not match the regex %s", value, propertyName, regex)
+		return fmt.Errorf("%w: value %s for property %s does not match %s", ErrRegexMismatch, value, propertyName, regex)
 	}
-
 	return nil
 }
 
-func NewProperty(name string, options ...func(*Property)) *Property {
+func NewProperty(name string, options ...PropertyOption) *Property {
 	defaults := &Property{
 		IncludeInTags:   true,
 		MaxLength:       0,
 		MinLength:       0,
 		Name:            name,
 		Required:        false,
+		TagsKeyCase:     nil,
+		TagsValueCase:   nil,
 		ValidationRegex: "",
 	}
 
@@ -131,5 +144,19 @@ func WithMaxLength(maxLength int) func(*Property) {
 func WithValidationRegex(regex string) func(*Property) {
 	return func(obj *Property) {
 		obj.ValidationRegex = regex
+	}
+}
+
+// WithPropertyTagsKeyCase sets the tags key case for the property.
+func WithPropertyTagsKeyCase(caseType cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsKeyCase = &caseType
+	}
+}
+
+// WithPropertyTagsValueCase sets the tags value case for the property.
+func WithPropertyTagsValueCase(caseType cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsValueCase = &caseType
 	}
 }
