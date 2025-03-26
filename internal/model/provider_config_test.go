@@ -19,6 +19,7 @@ func getDefaultProviderConfig(t *testing.T, enabled bool) *ProviderConfig {
 
 	return c
 }
+
 func TestProviderConfigIsEnabled(t *testing.T) {
 	c := getDefaultProviderConfig(t, true)
 	assert.Equal(t, true, c.IsEnabled())

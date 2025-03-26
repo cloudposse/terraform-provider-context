@@ -16,7 +16,7 @@ type DelimitedLabelModel struct {
 	Values            map[string]string
 }
 
-func (m DelimitedLabelModel) FromFramework(ctx context.Context, config DataSourceLabelConfig) (DelimitedLabelModel, diag.Diagnostics) {
+func (m DelimitedLabelModel) FromFramework(ctx context.Context, config *DataSourceLabelConfig) (DelimitedLabelModel, diag.Diagnostics) {
 	model := DelimitedLabelModel{}
 
 	var delimiter *string

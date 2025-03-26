@@ -112,12 +112,7 @@ func (d *ConfigDataSource) Configure(ctx context.Context, req datasource.Configu
 	d.providerData = providerData
 }
 
-func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config ConfigDataSourceModel
-
-	// Read Terraform configuration data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-
+func (d *ConfigDataSource) setBasicConfig(config *ConfigDataSourceModel) {
 	// delimiter
 	delimiter := d.providerData.ProviderConfig.GetDelimiter()
 	config.Delimiter = types.StringValue(delimiter)
@@ -125,8 +120,9 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	// enabled
 	enabled := d.providerData.ProviderConfig.IsEnabled()
 	config.Enabled = types.BoolValue(enabled)
+}
 
-	// properties
+func (d *ConfigDataSource) setProperties(ctx context.Context, config *ConfigDataSourceModel, resp *datasource.ReadResponse) {
 	properties := d.providerData.ProviderConfig.GetProperties()
 	propMap := make(map[string]model.FrameworkProperty, len(properties))
 	for _, v := range properties {
@@ -139,8 +135,9 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 	config.Properties = props
+}
 
-	// propertyOrder
+func (d *ConfigDataSource) setPropertyOrder(ctx context.Context, config *ConfigDataSourceModel, resp *datasource.ReadResponse) {
 	propertyOrder := d.providerData.ProviderConfig.GetPropertyOrder()
 	propOrder, diag := types.ListValueFrom(ctx, types.StringType, propertyOrder)
 	resp.Diagnostics.Append(diag...)
@@ -148,6 +145,36 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 	config.PropertyOrder = propOrder
+}
+
+func (d *ConfigDataSource) setValues(ctx context.Context, config *ConfigDataSourceModel, resp *datasource.ReadResponse) {
+	values := d.providerData.ProviderConfig.GetValues()
+	vals, diag := types.MapValueFrom(ctx, types.StringType, values)
+	resp.Diagnostics.Append(diag...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	config.Values = vals
+}
+
+//nolint:gocritic
+func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config ConfigDataSourceModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
+	d.setBasicConfig(&config)
+
+	d.setProperties(ctx, &config, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	d.setPropertyOrder(ctx, &config, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// replaceCharsRegex
 	replaceRegexChars := d.providerData.ProviderConfig.GetReplaceCharsRegex()
@@ -161,14 +188,10 @@ func (d *ConfigDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	tagsValueCase := d.providerData.ProviderConfig.GetTagsValueCase()
 	config.TagsValueCase = types.StringValue(tagsValueCase)
 
-	// values
-	values := d.providerData.ProviderConfig.GetValues()
-	vals, diag := types.MapValueFrom(ctx, types.StringType, values)
-	resp.Diagnostics.Append(diag...)
+	d.setValues(ctx, &config, resp)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	config.Values = vals
 
 	// id
 	id := mapHelpers.HashMap(config)

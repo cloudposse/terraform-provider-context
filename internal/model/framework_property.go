@@ -13,28 +13,49 @@ type FrameworkProperty struct {
 	ValidationRegex types.String `tfsdk:"validation_regex"`
 }
 
+func (p *FrameworkProperty) addRequiredOption(options []func(*Property)) []func(*Property) {
+	if !p.Required.IsNull() && !p.Required.IsUnknown() && p.Required.ValueBool() {
+		return append(options, WithRequired())
+	}
+	return options
+}
+
+func (p *FrameworkProperty) addIncludeInTagsOption(options []func(*Property)) []func(*Property) {
+	if !p.IncludeInTags.IsNull() && !p.IncludeInTags.IsUnknown() && !p.IncludeInTags.ValueBool() {
+		return append(options, WithExcludeFromTags())
+	}
+	return options
+}
+
+func (p *FrameworkProperty) addMinLengthOption(options []func(*Property)) []func(*Property) {
+	if !p.MinLength.IsNull() && !p.MinLength.IsUnknown() {
+		return append(options, WithMinLength(int(p.MinLength.ValueInt64())))
+	}
+	return options
+}
+
+func (p *FrameworkProperty) addMaxLengthOption(options []func(*Property)) []func(*Property) {
+	if !p.MaxLength.IsNull() && !p.MaxLength.IsUnknown() {
+		return append(options, WithMaxLength(int(p.MaxLength.ValueInt64())))
+	}
+	return options
+}
+
+func (p *FrameworkProperty) addValidationRegexOption(options []func(*Property)) []func(*Property) {
+	if !p.ValidationRegex.IsNull() && !p.ValidationRegex.IsUnknown() {
+		return append(options, WithValidationRegex(p.ValidationRegex.ValueString()))
+	}
+	return options
+}
+
 func (p *FrameworkProperty) ToModel(name string) (*Property, error) {
 	options := []func(*Property){}
 
-	if !p.Required.IsNull() && !p.Required.IsUnknown() && p.Required.ValueBool() {
-		options = append(options, WithRequired())
-	}
-
-	if !p.IncludeInTags.IsNull() && !p.IncludeInTags.IsUnknown() && !p.IncludeInTags.ValueBool() {
-		options = append(options, WithExcludeFromTags())
-	}
-
-	if !p.MinLength.IsNull() && !p.MinLength.IsUnknown() {
-		options = append(options, WithMinLength(int(p.MinLength.ValueInt64())))
-	}
-
-	if !p.MaxLength.IsNull() && !p.MaxLength.IsUnknown() {
-		options = append(options, WithMaxLength(int(p.MaxLength.ValueInt64())))
-	}
-
-	if !p.ValidationRegex.IsNull() && !p.ValidationRegex.IsUnknown() {
-		options = append(options, WithValidationRegex(p.ValidationRegex.ValueString()))
-	}
+	options = p.addRequiredOption(options)
+	options = p.addIncludeInTagsOption(options)
+	options = p.addMinLengthOption(options)
+	options = p.addMaxLengthOption(options)
+	options = p.addValidationRegexOption(options)
 
 	return NewProperty(name, options...), nil
 }

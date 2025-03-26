@@ -7,6 +7,8 @@ import (
 	"github.com/sigurn/crc16"
 )
 
+const base10 = 10
+
 func TruncateWithHash(input string, maxLength int) string {
 	// If the input is already within the maxLength, no need to truncate
 	if len(input) <= maxLength {
@@ -20,7 +22,7 @@ func TruncateWithHash(input string, maxLength int) string {
 
 	// Calculate the CRC16 checksum
 	checksum := crc16.Checksum(data, table)
-	hashLength := len(strconv.FormatUint(uint64(checksum), 10))
+	hashLength := len(strconv.FormatUint(uint64(checksum), base10))
 
 	truncated := fmt.Sprintf("%s%d", input[:maxLength-hashLength], checksum)
 
