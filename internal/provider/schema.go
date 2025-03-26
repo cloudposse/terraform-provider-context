@@ -36,12 +36,16 @@ func getPropertiesSchema() schema.NestedAttributeObject {
 			"tags_key_case": schema.StringAttribute{
 				MarkdownDescription: "The case to use for the key of this property in tags. If not set, uses the provider's tags_key_case setting. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"tags_value_case": schema.StringAttribute{
 				MarkdownDescription: "The case to use for the value of this property in tags. If not set, uses the provider's tags_value_case setting. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"validation_regex": schema.StringAttribute{
 				MarkdownDescription: "A regular expression to validate the property.",
@@ -73,12 +77,16 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 			"tags_key_case": dsschema.StringAttribute{
 				MarkdownDescription: "The case to use for the key of this property in tags.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"tags_value_case": dsschema.StringAttribute{
 				MarkdownDescription: "The case to use for the value of this property in tags.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"validation_regex": dsschema.StringAttribute{
 				MarkdownDescription: "A regular expression to validate the property.",
