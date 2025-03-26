@@ -87,3 +87,31 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 		},
 	}
 }
+
+func GetProviderSchema() map[string]dsschema.Attribute {
+	return map[string]dsschema.Attribute{
+		"delimiter": dsschema.StringAttribute{
+			Optional:            true,
+			MarkdownDescription: "The delimiter to use between label elements.",
+		},
+		"enabled": dsschema.BoolAttribute{
+			Optional:            true,
+			MarkdownDescription: "Set to false to prevent the module from creating any resources.",
+		},
+		"tags_key_case": dsschema.StringAttribute{
+			Optional:            true,
+			MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+			Validators: []validator.String{
+				stringvalidator.OneOf(ValidCases...),
+			},
+		},
+		"tags_value_case": dsschema.StringAttribute{
+			Optional:            true,
+			MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+			Validators: []validator.String{
+				stringvalidator.OneOf(ValidCases...),
+			},
+		},
+		// ... rest of the schema ...
+	}
+}

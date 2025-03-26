@@ -69,14 +69,18 @@ func (p *ContextProvider) Schema(ctx context.Context, req provider.SchemaRequest
 				Optional:            true,
 			},
 			"tags_key_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"tags_value_case": schema.StringAttribute{
-				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+				MarkdownDescription: "The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.",
+				Validators: []validator.String{
+					stringvalidator.OneOf(ValidCases...),
+				},
 			},
 			"values": schema.MapAttribute{
 				MarkdownDescription: "A map of values to use for labels created by the provider.",
