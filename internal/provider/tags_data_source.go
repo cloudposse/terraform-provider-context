@@ -135,7 +135,7 @@ func (d *TagsDataSource) getLocalTagsKeyCase(config *TagsDataSourceModel, resp *
 
 func (d *TagsDataSource) getLocalTagsValueCase(config *TagsDataSourceModel, resp *datasource.ReadResponse) *cases.Case {
 	if !config.TagsValueCase.IsNull() {
-		tagsValueCase, err := cases.FromString(*config.TagsKeyCase.ValueStringPointer())
+		tagsValueCase, err := cases.FromString(*config.TagsValueCase.ValueStringPointer())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to convert tags_value_case to model", err.Error())
 			return nil
