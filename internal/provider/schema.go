@@ -73,10 +73,12 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 			"tags_key_case": dsschema.StringAttribute{
 				MarkdownDescription: "The case to use for the key of this property in tags.",
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
 			},
 			"tags_value_case": dsschema.StringAttribute{
 				MarkdownDescription: "The case to use for the value of this property in tags.",
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
 			},
 			"validation_regex": dsschema.StringAttribute{
 				MarkdownDescription: "A regular expression to validate the property.",
