@@ -125,11 +125,13 @@ func (d *ConfigDataSource) setBasicConfig(config *ConfigDataSourceModel) {
 func (d *ConfigDataSource) setProperties(ctx context.Context, config *ConfigDataSourceModel, resp *datasource.ReadResponse) {
 	properties := d.providerData.ProviderConfig.GetProperties()
 	propMap := make(map[string]model.FrameworkProperty, len(properties))
-	for _, v := range properties {
-		propMap[v.Name] = model.FrameworkProperty{}.FromConfigProperty(v)
+	fp := &model.FrameworkProperty{}
+	for _, prop := range properties {
+		property := prop // Create a new variable to avoid memory aliasing
+		propMap[property.Name] = fp.FromConfigProperty(&property)
 	}
 
-	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: model.FrameworkProperty{}.Types()}, propMap)
+	props, diag := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: fp.Types()}, propMap)
 	resp.Diagnostics.Append(diag...)
 	if resp.Diagnostics.HasError() {
 		return

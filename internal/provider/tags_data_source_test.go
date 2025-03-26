@@ -217,6 +217,106 @@ data "context_tags" "test" {}`,
 	})
 }
 
+func TestAccTagsDataSource_propertySpecificCases(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+provider "context" {
+  delimiter = "-"
+  enabled = true
+  tags_key_case = "title"
+  tags_value_case = "none"
+
+  properties = {
+    namespace = {
+      required = true
+      include_in_tags = true
+      tags_key_case = "upper"
+      tags_value_case = "upper"
+    }
+    environment = {
+      required = true
+      include_in_tags = true
+      tags_key_case = "lower"
+      tags_value_case = "lower"
+    }
+    stage = {
+      required = false
+      include_in_tags = true
+      tags_key_case = "snake"
+      tags_value_case = "snake"
+    }
+  }
+
+  values = {
+    namespace = "TestNamespace"
+    environment = "TestEnvironment"
+    stage = "TestStage"
+  }
+}
+
+data "context_tags" "test" {}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.NAMESPACE", "TESTNAMESPACE"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.environment", "testenvironment"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.stage", "test_stage"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.#", "3"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTagsDataSource_mixedCases(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+provider "context" {
+  delimiter = "-"
+  enabled = true
+  tags_key_case = "title"
+  tags_value_case = "none"
+
+  properties = {
+    namespace = {
+      required = true
+      include_in_tags = true
+      tags_key_case = "upper"
+    }
+    environment = {
+      required = true
+      include_in_tags = true
+      tags_value_case = "upper"
+    }
+    stage = {
+      required = false
+      include_in_tags = true
+    }
+  }
+
+  values = {
+    namespace = "TestNamespace"
+    environment = "TestEnvironment"
+    stage = "TestStage"
+  }
+}
+
+data "context_tags" "test" {}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.NAMESPACE", "TestNamespace"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.Environment", "TESTENVIRONMENT"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags.Stage", "TestStage"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.#", "3"),
+				),
+			},
+		},
+	})
+}
+
 const testAccTagsBasicCfg = `
 provider "context" {
   properties = {
