@@ -58,7 +58,7 @@ func TestProviderConfigGetDelimitedLabelWithTruncationError(t *testing.T) {
 	c := getDefaultProviderConfig(t, true)
 	_, errs := c.GetDelimitedLabel(nil, nil, nil, nil, nil, 10, false)
 	assert.Equal(t, 1, len(errs))
-	assert.Equal(t, "label foo-bar-baz exceeds maximum length of 10", errs[0].Error())
+	assert.Equal(t, "label exceeds maximum length: foo-bar-baz (max: 10)", errs[0].Error())
 }
 
 func TestProviderConfigGetDelimitedLabelWithLocalDelimiter(t *testing.T) {

@@ -207,6 +207,14 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
+	// Validate the properties
+	if errs := providerConfig.ValidateProperties(values); len(errs) > 0 {
+		for _, err := range errs {
+			resp.Diagnostics.AddError("Validation Error", err.Error())
+		}
+		return
+	}
+
 	providerData := &model.ProviderData{
 		ProviderConfig: providerConfig,
 	}
