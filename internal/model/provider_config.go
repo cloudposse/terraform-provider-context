@@ -278,20 +278,21 @@ func (c *ProviderConfig) GetTags(values map[string]string, tagsKeyCase *cases.Ca
 	}
 
 	for _, p := range c.properties {
-		if p.IncludeInTags {
-			// Use property-specific cases if available, otherwise use merged cases
-			keyCase := mergedTagsKeyCase
-			if p.TagsKeyCase != nil {
-				keyCase = *p.TagsKeyCase
-			}
-			valueCase := mergedTagsValueCase
-			if p.TagsValueCase != nil {
-				valueCase = *p.TagsValueCase
-			}
-			key, value := getCasedTag(p.Name, mergedValues[p.Name], keyCase, valueCase)
-			if value != "" {
-				tags[key] = value
-			}
+		if !p.IncludeInTags {
+			continue
+		}
+		// Use property-specific cases if available, otherwise use merged cases
+		keyCase := mergedTagsKeyCase
+		if p.TagsKeyCase != nil {
+			keyCase = *p.TagsKeyCase
+		}
+		valueCase := mergedTagsValueCase
+		if p.TagsValueCase != nil {
+			valueCase = *p.TagsValueCase
+		}
+		key, value := getCasedTag(p.Name, mergedValues[p.Name], keyCase, valueCase)
+		if value != "" {
+			tags[key] = value
 		}
 	}
 	return tags, nil

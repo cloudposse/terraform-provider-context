@@ -83,7 +83,7 @@ func (p *FrameworkProperty) ToModel(name string) (*Property, error) {
 	return NewProperty(name, options...), nil
 }
 
-func (p FrameworkProperty) Types() map[string]attr.Type {
+func (p *FrameworkProperty) Types() map[string]attr.Type {
 	return map[string]attr.Type{
 		"include_in_tags":  types.BoolType,
 		"max_length":       types.Int64Type,
@@ -95,7 +95,7 @@ func (p FrameworkProperty) Types() map[string]attr.Type {
 	}
 }
 
-func (p FrameworkProperty) FromConfigProperty(cp Property) FrameworkProperty {
+func (p *FrameworkProperty) FromConfigProperty(cp *Property) FrameworkProperty {
 	fp := FrameworkProperty{
 		IncludeInTags:   types.BoolValue(cp.IncludeInTags),
 		MaxLength:       types.Int64Value(int64(cp.MaxLength)),
