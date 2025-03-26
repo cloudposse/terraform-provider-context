@@ -15,7 +15,7 @@ type TemplatedLabelModel struct {
 	Values            map[string]string
 }
 
-func (m TemplatedLabelModel) FromFramework(ctx context.Context, config DataSourceLabelConfig) (TemplatedLabelModel, diag.Diagnostics) {
+func (m TemplatedLabelModel) FromFramework(ctx context.Context, config *DataSourceLabelConfig) (TemplatedLabelModel, diag.Diagnostics) {
 	model := TemplatedLabelModel{}
 
 	if config.MaxLength.IsNull() {

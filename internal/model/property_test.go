@@ -63,7 +63,7 @@ func TestPropertyValidateWithRequiredInvalid(t *testing.T) {
 	err := p.Validate("")
 
 	assert.Equal(t, 1, len(err))
-	assert.Equal(t, "value for property test is required", err[0].Error())
+	assert.Equal(t, "property is required: value for property test", err[0].Error())
 }
 
 func TestPropertyValidateWithRequiredValid(t *testing.T) {
@@ -80,7 +80,7 @@ func TestPropertyValidateWithMinLengthInvalid(t *testing.T) {
 	err := p.Validate("test")
 
 	assert.Equal(t, 1, len(err))
-	assert.Equal(t, "value test for property test is less than the minimum length of 5", err[0].Error())
+	assert.Equal(t, "value is less than minimum length: value test for property test is less than 5", err[0].Error())
 }
 
 func TestPropertyValidateWithMinLengthValid(t *testing.T) {
@@ -97,7 +97,7 @@ func TestPropertyValidateWithMaxLengthInvalid(t *testing.T) {
 	err := p.Validate("testing")
 
 	assert.Equal(t, 1, len(err))
-	assert.Equal(t, "value testing for property test is greater than the maximum length of 5", err[0].Error())
+	assert.Equal(t, "value is greater than maximum length: value testing for property test is greater than 5", err[0].Error())
 }
 
 func TestPropertyValidateWithMaxLengthValid(t *testing.T) {
@@ -114,7 +114,7 @@ func TestPropertyValidateWithValidationRegexInvalid(t *testing.T) {
 	err := p.Validate("123")
 
 	assert.Equal(t, 1, len(err))
-	assert.Equal(t, "value 123 for property test does not match the regex ^[a-z]+$", err[0].Error())
+	assert.Equal(t, "value does not match regex: value 123 for property test does not match ^[a-z]+$", err[0].Error())
 }
 
 func TestPropertyValidateWithValidationRegexValid(t *testing.T) {

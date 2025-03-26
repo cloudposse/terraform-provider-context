@@ -1,6 +1,7 @@
 package cases
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -50,15 +51,16 @@ func FromString(slug string) (Case, error) {
 	case "upper":
 		return UpperCase, nil
 	}
-	return Case{}, fmt.Errorf("unknown case: %s", slug)
+	return Case{}, fmt.Errorf("%w: %s", ErrUnknownCase, slug)
 }
 
 var (
-	Unknown   = Case{""}
-	None      = Case{"none"}
-	CamelCase = Case{"camel"}
-	LowerCase = Case{"lower"}
-	SnakeCase = Case{"snake"}
-	TitleCase = Case{"title"}
-	UpperCase = Case{"upper"}
+	Unknown        = Case{""}
+	None           = Case{"none"}
+	CamelCase      = Case{"camel"}
+	LowerCase      = Case{"lower"}
+	SnakeCase      = Case{"snake"}
+	TitleCase      = Case{"title"}
+	UpperCase      = Case{"upper"}
+	ErrUnknownCase = errors.New("unknown case")
 )
