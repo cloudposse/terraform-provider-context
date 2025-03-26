@@ -119,6 +119,7 @@ func (d *LabelDataSource) ConfigValidators(ctx context.Context) []datasource.Con
 	}
 }
 
+//nolint:gocritic
 func (d *LabelDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config model.DataSourceLabelConfig
 
@@ -162,12 +163,12 @@ func readLabel(ctx context.Context, pc *model.ProviderConfig, config *model.Data
 
 // readTemplatedLabel creates a label using a template.
 func readTemplatedLabel(ctx context.Context, pc *model.ProviderConfig, config *model.DataSourceLabelConfig) (string, diag.Diagnostics) {
-	model, diags := model.TemplatedLabelModel{}.FromFramework(ctx, *config)
+	templatedLabel, diags := model.TemplatedLabelModel{}.FromFramework(ctx, config)
 	if diags.HasError() {
 		return "", diags
 	}
 
-	label, errs := pc.GetTemplatedLabel(model.Template, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
+	label, errs := pc.GetTemplatedLabel(templatedLabel.Template, templatedLabel.Values, templatedLabel.ReplaceCharsRegex, int(templatedLabel.MaxLength), templatedLabel.Truncate)
 	processErrors(errs, &diags)
 
 	return label, diags
@@ -175,12 +176,12 @@ func readTemplatedLabel(ctx context.Context, pc *model.ProviderConfig, config *m
 
 // readDelimitedLabel creates a label using a delimiter.
 func readDelimitedLabel(ctx context.Context, pc *model.ProviderConfig, config *model.DataSourceLabelConfig) (string, diag.Diagnostics) {
-	model, diags := model.DelimitedLabelModel{}.FromFramework(ctx, *config)
+	delimitedLabel, diags := model.DelimitedLabelModel{}.FromFramework(ctx, config)
 	if diags.HasError() {
 		return "", diags
 	}
 
-	label, errs := pc.GetDelimitedLabel(model.Delimiter, model.PropertyNames, model.PropertyNames, model.Values, model.ReplaceCharsRegex, int(model.MaxLength), model.Truncate)
+	label, errs := pc.GetDelimitedLabel(delimitedLabel.Delimiter, delimitedLabel.PropertyNames, delimitedLabel.PropertyNames, delimitedLabel.Values, delimitedLabel.ReplaceCharsRegex, int(delimitedLabel.MaxLength), delimitedLabel.Truncate)
 	processErrors(errs, &diags)
 
 	return label, diags

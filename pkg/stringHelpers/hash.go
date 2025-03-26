@@ -6,7 +6,6 @@ import (
 )
 
 func HashString(s string) string {
-
 	// Hash the string using SHA256
 	hasher := sha256.New()
 	hasher.Write([]byte(s))

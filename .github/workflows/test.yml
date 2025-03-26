@@ -12,10 +12,10 @@ on:
       - main
       - release/v*
     paths-ignore:
-      - '.github/**'
-      - 'docs/**'
-      - 'examples/**'
-      - 'test/**'
+      - ".github/**"
+      - "docs/**"
+      - "examples/**"
+      - "test/**"
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -53,6 +53,9 @@ jobs:
         with:
           go-version-file: "go.mod"
           cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - run: go generate ./...
       - name: git diff
         run: |
