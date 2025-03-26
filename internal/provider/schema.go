@@ -5,6 +5,7 @@ import (
 	dsschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 func getPropertiesSchema() schema.NestedAttributeObject {
@@ -32,6 +33,16 @@ func getPropertiesSchema() schema.NestedAttributeObject {
 				MarkdownDescription: "A flag to indicate if the property is required.",
 				Optional:            true,
 			},
+			"tags_key_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the key of this property in tags. If not set, uses the provider's tags_key_case setting. Valid values are: none, camel, lower, snake, title, upper.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
+			"tags_value_case": schema.StringAttribute{
+				MarkdownDescription: "The case to use for the value of this property in tags. If not set, uses the provider's tags_value_case setting. Valid values are: none, camel, lower, snake, title, upper.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf("none", "camel", "lower", "snake", "title", "upper")},
+			},
 			"validation_regex": schema.StringAttribute{
 				MarkdownDescription: "A regular expression to validate the property.",
 				Optional:            true,
@@ -57,6 +68,14 @@ func getPropertiesDSSchema() dsschema.NestedAttributeObject {
 			},
 			"required": dsschema.BoolAttribute{
 				MarkdownDescription: "A flag to indicate if the property is required.",
+				Optional:            true,
+			},
+			"tags_key_case": dsschema.StringAttribute{
+				MarkdownDescription: "The case to use for the key of this property in tags.",
+				Optional:            true,
+			},
+			"tags_value_case": dsschema.StringAttribute{
+				MarkdownDescription: "The case to use for the value of this property in tags.",
 				Optional:            true,
 			},
 			"validation_regex": dsschema.StringAttribute{

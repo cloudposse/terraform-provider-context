@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 )
+
+// PropertyOption is a function that modifies a Property.
+type PropertyOption func(*Property)
 
 type Property struct {
 	IncludeInTags   bool
@@ -13,6 +18,8 @@ type Property struct {
 	MinLength       int
 	Name            string
 	Required        bool
+	TagsKeyCase     *cases.Case
+	TagsValueCase   *cases.Case
 	ValidationRegex string
 }
 
@@ -91,13 +98,15 @@ func validateRegex(regex string, value string, propertyName string) error {
 	return nil
 }
 
-func NewProperty(name string, options ...func(*Property)) *Property {
+func NewProperty(name string, options ...PropertyOption) *Property {
 	defaults := &Property{
 		IncludeInTags:   true,
 		MaxLength:       0,
 		MinLength:       0,
 		Name:            name,
 		Required:        false,
+		TagsKeyCase:     nil,
+		TagsValueCase:   nil,
 		ValidationRegex: "",
 	}
 
@@ -135,5 +144,19 @@ func WithMaxLength(maxLength int) func(*Property) {
 func WithValidationRegex(regex string) func(*Property) {
 	return func(obj *Property) {
 		obj.ValidationRegex = regex
+	}
+}
+
+// WithPropertyTagsKeyCase sets the tags key case for the property.
+func WithPropertyTagsKeyCase(caseType cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsKeyCase = &caseType
+	}
+}
+
+// WithPropertyTagsValueCase sets the tags value case for the property.
+func WithPropertyTagsValueCase(caseType cases.Case) func(*Property) {
+	return func(obj *Property) {
+		obj.TagsValueCase = &caseType
 	}
 }
