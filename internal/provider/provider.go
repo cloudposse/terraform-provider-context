@@ -160,10 +160,35 @@ func (p *ContextProvider) getOptions(providerConfigModel *providerConfigModel, r
 	return options
 }
 
+<<<<<<< HEAD
 func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var providerConfigModel providerConfigModel
 
 	// Get the configuration from the request
+=======
+func (p *ContextProvider) createAndValidateProviderConfig(configProperties []model.Property, propertyOrder []string, values map[string]string, options []func(*model.ProviderConfig), resp *provider.ConfigureResponse) *model.ProviderData {
+	providerConfig, err := model.NewProviderConfig(configProperties, propertyOrder, values, options...)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to create provider config", err.Error())
+		return nil
+	}
+
+	if errs := providerConfig.ValidateProperties(values); len(errs) > 0 {
+		for _, err := range errs {
+			resp.Diagnostics.AddError("Validation Error", err.Error())
+		}
+		return nil
+	}
+
+	return &model.ProviderData{
+		ProviderConfig: providerConfig,
+	}
+}
+
+func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var providerConfigModel providerConfigModel
+
+>>>>>>> main
 	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfigModel)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -200,13 +225,12 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 		"values":              values,
 	})
 
-	// Create the context providerConfig
-	providerConfig, err := model.NewProviderConfig(configProperties, propertyOrder, values, options...)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to create provider config", err.Error())
+	providerData := p.createAndValidateProviderConfig(configProperties, propertyOrder, values, options, resp)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
+<<<<<<< HEAD
 	// Validate the properties
 	if errs := providerConfig.ValidateProperties(values); len(errs) > 0 {
 		for _, err := range errs {
@@ -220,6 +244,8 @@ func (p *ContextProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	// Set the provider data in the response
+=======
+>>>>>>> main
 	p.providerData = providerData
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
