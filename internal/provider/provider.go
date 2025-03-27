@@ -243,6 +243,7 @@ func (p *ContextProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewConfigDataSource,
 		NewLabelDataSource,
 		NewTagsDataSource,
+		NewGcpLabelsDataSource,
 	}
 }
 
