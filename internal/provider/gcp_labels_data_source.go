@@ -19,7 +19,7 @@ func NewGcpLabelsDataSource() datasource.DataSource {
 	return &GcpLabelsDataSource{}
 }
 
-// GcpLabelsDataSource extends TagsDataSource
+// GcpLabelsDataSource extends TagsDataSource.
 type GcpLabelsDataSource struct {
 	TagsDataSource
 }
@@ -81,10 +81,11 @@ func (d *GcpLabelsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 	}
 }
 
+//nolint:gocritic
 func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config GcpLabelsDataSourceModel
 
-	// Read Terraform configuration data into the model
+	// Read Terraform configuration data into the model.
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	localValues := d.getLocalValues(ctx, &config.TagsDataSourceModel, resp)

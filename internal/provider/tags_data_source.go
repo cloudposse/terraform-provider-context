@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/cloudposse/terraform-provider-context/internal/framework"
 	"github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
