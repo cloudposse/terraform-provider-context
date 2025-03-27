@@ -56,6 +56,21 @@ func TestAccTagsDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr("data.context_tags.test", "tags.NAME", "example"),
 				),
 			},
+			{
+				Config: testAccTagsReplaceCfg,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.0.Key", "Name"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.1.Key", "Namespace"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.2.Key", "Stage"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.3.Key", "Tenant"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.4.Key", "Tenant"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.0.Value", "example"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.1.Value", "cp"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.2.Value", "prod"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.3.Value", "core"),
+					resource.TestCheckResourceAttr("data.context_tags.test", "tags_as_list.4.Value", "foo-bar-baz"),
+				),
+			},
 		},
 	})
 }
@@ -399,6 +414,34 @@ provider "context" {
     "Tenant" = "core"
     "Stage" = "prod"
     "Name"  = "example"
+  }
+}
+
+
+data "context_tags" "test" {
+}
+`
+const testAccTagsReplaceCfg = `
+provider "context" {
+  properties = {
+    Namespace = {}
+    Tenant    = {}
+    Stage     = {}
+    Name      = {}
+    ComponentPath      = {}
+  }
+
+  values = {
+    "Namespace" = "cloudposse"
+    "Tenant" = "core"
+    "Stage" = "prod"
+    "Name"  = "example"
+	"ComponentPath" = "foo/bar/baz"
+  }
+
+  replacement_map = {
+	"cloudposse" = "cp"
+	"/" = "-"
   }
 }
 
