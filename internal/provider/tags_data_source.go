@@ -85,7 +85,7 @@ func (d *TagsDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 			},
 			"replacement_map": schema.MapAttribute{
 				MarkdownDescription: "Map of strings to replace in the tag, applies to both key and value. The key is the string to replace, and the value is the string to replace it with.",
-				Required:            false,
+				Optional:            true,
 				ElementType:         types.StringType,
 			},
 		},
