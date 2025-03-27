@@ -3,8 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/cloudposse/terraform-provider-context/internal/framework"
 	"github.com/cloudposse/terraform-provider-context/internal/model"
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
@@ -83,11 +81,6 @@ func (d *TagsDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				MarkdownDescription: "Tags identifier",
 				Computed:            true,
 			},
-			"replacement_map": schema.MapAttribute{
-				MarkdownDescription: "Map of strings to replace in the tag, applies to both key and value. The key is the string to replace, and the value is the string to replace it with.",
-				Optional:            true,
-				ElementType:         types.StringType,
-			},
 		},
 	}
 }
@@ -126,20 +119,6 @@ func (d *TagsDataSource) getLocalValues(ctx context.Context, config *TagsDataSou
 		return nil
 	}
 	return localValues
-}
-
-func (d *TagsDataSource) getLocalReplacements(config *TagsDataSourceModel, values map[string]string) map[string]string {
-	replacedValues := make(map[string]string)
-	if !config.ReplacementMap.IsNull() {
-		for tag_key, tag_value := range values {
-			for old, newstring := range config.ReplacementMap.Elements() {
-				replacedValues[strings.ReplaceAll(tag_key, old, newstring.String())] = strings.ReplaceAll(tag_value, old, newstring.String())
-			}
-		}
-		return replacedValues
-	}
-
-	return values
 }
 
 func (d *TagsDataSource) getLocalTagsKeyCase(config *TagsDataSourceModel, resp *datasource.ReadResponse) *cases.Case {
@@ -209,11 +188,6 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	localValues := d.getLocalValues(ctx, &config, resp)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	localValues = d.getLocalReplacements(&config, localValues)
 	if resp.Diagnostics.HasError() {
 		return
 	}

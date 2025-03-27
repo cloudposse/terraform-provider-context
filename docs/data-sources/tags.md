@@ -17,7 +17,6 @@ Tags data source
 
 ### Optional
 
-- `replacement_map` (Map of String) Map of strings to replace in the tag, applies to both key and value. The key is the string to replace, and the value is the string to replace it with.
 - `tags_key_case` (String) The case to use for the keys of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.
 - `tags_value_case` (String) The case to use for the values of tags created by the provider. Valid values are: none, camel, lower, snake, title, upper.
 - `values` (Map of String) Map of values to override or add to the context when creating the label.
