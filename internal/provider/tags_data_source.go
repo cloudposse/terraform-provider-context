@@ -30,13 +30,12 @@ type TagsDataSource struct {
 
 // TagsDataSourceModel describes the data source data model.
 type TagsDataSourceModel struct {
-	Id             types.String `tfsdk:"id"`
-	Values         types.Map    `tfsdk:"values"`
-	Tags           types.Map    `tfsdk:"tags"`
-	TagsKeyCase    types.String `tfsdk:"tags_key_case"`
-	TagsValueCase  types.String `tfsdk:"tags_value_case"`
-	TagsAsList     types.List   `tfsdk:"tags_as_list"`
-	ReplacementMap types.Map    `tfsdk:"replacement_map"`
+	Id            types.String `tfsdk:"id"`
+	Values        types.Map    `tfsdk:"values"`
+	Tags          types.Map    `tfsdk:"tags"`
+	TagsKeyCase   types.String `tfsdk:"tags_key_case"`
+	TagsValueCase types.String `tfsdk:"tags_value_case"`
+	TagsAsList    types.List   `tfsdk:"tags_as_list"`
 }
 
 func (d *TagsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
