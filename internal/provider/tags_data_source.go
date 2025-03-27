@@ -128,7 +128,7 @@ func (d *TagsDataSource) getLocalValues(ctx context.Context, config *TagsDataSou
 	return localValues
 }
 
-func (d *TagsDataSource) getLocalReplacements(config *TagsDataSourceModel, resp *datasource.ReadResponse, values map[string]string) map[string]string {
+func (d *TagsDataSource) getLocalReplacements(config *TagsDataSourceModel, values map[string]string) map[string]string {
 	replacedValues := make(map[string]string)
 	if !config.ReplacementMap.IsNull() {
 		for tag_key, tag_value := range values {
@@ -213,7 +213,7 @@ func (d *TagsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	localValues = d.getLocalReplacements(&config, resp, localValues)
+	localValues = d.getLocalReplacements(&config, localValues)
 	if resp.Diagnostics.HasError() {
 		return
 	}
