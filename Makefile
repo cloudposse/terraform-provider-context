@@ -36,3 +36,6 @@ test:
 .PHONY: testacc
 testacc:
 	TF_ACC=1 go test ./... -json -v $(TESTARGS) -count 1 -timeout 120m | gotestfmt
+
+locallint:
+	docker run --rm -v "$(pwd):/app" -w /app golangci/golangci-lint:v1.64.8 golangci-lint run --fix
