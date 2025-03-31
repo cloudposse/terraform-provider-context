@@ -2,10 +2,11 @@ package provider
 
 import (
 	"context"
+	"strings"
+
 	"github.com/cloudposse/terraform-provider-context/internal/framework"
 	"github.com/cloudposse/terraform-provider-context/pkg/cases"
 	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -122,6 +123,7 @@ func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
+//nolint:revive
 func (d *GcpLabelsDataSource) setTags(ctx context.Context, config *GcpLabelsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
 	tags, errs := d.providerData.ProviderConfig.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
@@ -139,6 +141,7 @@ func (d *GcpLabelsDataSource) setTags(ctx context.Context, config *GcpLabelsData
 	config.Id = types.StringValue(tagsAsHash)
 }
 
+//nolint:revive
 func (d *GcpLabelsDataSource) setTagsList(ctx context.Context, config *GcpLabelsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
 	tagsList, errs := d.providerData.ProviderConfig.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
 	d.handleValidationErrors(resp, errs)
@@ -159,11 +162,9 @@ func (d *GcpLabelsDataSource) runReplaceOnTags(ctx context.Context, config *GcpL
 	if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
 		replacementMap, _ := framework.FromFrameworkMap[string](ctx, config.ReplacementMap)
 		for tagKey, tagValue := range values {
-			newTagKey := tagKey
-			newTagValue := tagValue
 			for old, newString := range replacementMap {
-				newTagKey = strings.ReplaceAll(tagKey, old, newString)
-				newTagValue = strings.ReplaceAll(tagValue, old, newString)
+				newTagKey := strings.ReplaceAll(tagKey, old, newString)
+				newTagValue := strings.ReplaceAll(tagValue, old, newString)
 				replacedValues[newTagKey] = newTagValue
 			}
 		}
