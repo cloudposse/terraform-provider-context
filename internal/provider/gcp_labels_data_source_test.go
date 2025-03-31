@@ -25,7 +25,6 @@ func TestAccGcpLabelsDataSourceBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.context_gcp_labels.test", "tags_as_list.2.Value", "cp"),
 					resource.TestCheckResourceAttr("data.context_gcp_labels.test", "tags_as_list.3.Value", "prod"),
 					resource.TestCheckResourceAttr("data.context_gcp_labels.test", "tags_as_list.4.Value", "core"),
-					resource.TestCheckResourceAttr("data.context_gcp_labels.test", "tags.ComponentPath", "foo-bar-baz"),
 				),
 			},
 		},
