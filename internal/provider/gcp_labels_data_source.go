@@ -106,25 +106,6 @@ func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	replacedValues := make(map[string]string)
-	replacementMap, _ := framework.FromFrameworkMap[string](ctx, config.ReplacementMap)
-	//if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
-	for tagKey, tagValue := range localValues {
-		newTagKey := tagKey
-		newTagValue := tagValue
-		for old, newString := range replacementMap {
-			newTagKey = strings.ReplaceAll(newTagKey, old, newString)
-			newTagValue = strings.ReplaceAll(newTagValue, old, newString)
-		}
-		replacedValues[newTagKey] = newTagValue
-		replacedValues[tagKey] = newTagValue
-	}
-	//}
-
-	localValues = replacedValues
-	localValues["Name"] = replacedValues["Name"]
-	//localValues["Name"] = replacementMap["/"]
-
 	d.setTags(ctx, &config, resp, localValues, localTagsKeyCase, localTagsValueCase)
 	if resp.Diagnostics.HasError() {
 		return
@@ -147,7 +128,7 @@ func (d *GcpLabelsDataSource) setTags(ctx context.Context, config *GcpLabelsData
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	frameworkTags, diags := types.MapValueFrom(ctx, types.StringType, d.runReplaceOnTags(config, tags))
+	frameworkTags, diags := types.MapValueFrom(ctx, types.StringType, d.runReplaceOnTags(ctx, config, tags))
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -165,7 +146,7 @@ func (d *GcpLabelsDataSource) setTagsList(ctx context.Context, config *GcpLabels
 		return
 	}
 
-	frameworkTagsAsList, diags := types.ListValueFrom(ctx, types.MapType{ElemType: types.StringType}, tagsList)
+	frameworkTagsAsList, diags := types.ListValueFrom(ctx, types.MapType{ElemType: types.StringType}, d.runReplaceOnTagsList(ctx, config, tagsList))
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -173,19 +154,37 @@ func (d *GcpLabelsDataSource) setTagsList(ctx context.Context, config *GcpLabels
 	config.TagsAsList = frameworkTagsAsList
 }
 
-func (d *GcpLabelsDataSource) runReplaceOnTags(config *GcpLabelsDataSourceModel, values map[string]string) map[string]string {
+func (d *GcpLabelsDataSource) runReplaceOnTags(ctx context.Context, config *GcpLabelsDataSourceModel, values map[string]string) map[string]string {
 	replacedValues := make(map[string]string)
 	if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
+		replacementMap, _ := framework.FromFrameworkMap[string](ctx, config.ReplacementMap)
 		for tagKey, tagValue := range values {
 			newTagKey := tagKey
 			newTagValue := tagValue
-			for old, newString := range config.ReplacementMap.Elements() {
-				newTagKey = strings.ReplaceAll(newTagKey, old, newString.String())
-				newTagValue = strings.ReplaceAll(newTagValue, old, newString.String())
+			for old, newString := range replacementMap {
+				newTagKey = strings.ReplaceAll(tagKey, old, newString)
+				newTagValue = strings.ReplaceAll(tagValue, old, newString)
+				replacedValues[newTagKey] = newTagValue
 			}
-			replacedValues[newTagKey] = newTagValue
 		}
+
 		return replacedValues
+	}
+	return values
+}
+
+func (d *GcpLabelsDataSource) runReplaceOnTagsList(ctx context.Context, config *GcpLabelsDataSourceModel, values []map[string]string) []map[string]string {
+	if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
+		replacementMap, _ := framework.FromFrameworkMap[string](ctx, config.ReplacementMap)
+
+		for _, TagKV := range values {
+			for old, newString := range replacementMap {
+				TagKV["Key"] = strings.ReplaceAll(TagKV["Key"], old, newString)
+				TagKV["Value"] = strings.ReplaceAll(TagKV["Value"], old, newString)
+			}
+		}
+
+		return values
 	}
 	return values
 }
