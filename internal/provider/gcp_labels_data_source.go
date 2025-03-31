@@ -2,6 +2,9 @@ package provider
 
 import (
 	"context"
+	"github.com/cloudposse/terraform-provider-context/internal/framework"
+	"github.com/cloudposse/terraform-provider-context/pkg/cases"
+	mapHelpers "github.com/cloudposse/terraform-provider-context/pkg/map"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -93,11 +96,6 @@ func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	localValues = d.getLocalReplacements(&config, localValues)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	localTagsKeyCase := d.getLocalTagsKeyCase(&config.TagsDataSourceModel, resp)
 	if resp.Diagnostics.HasError() {
 		return
@@ -108,12 +106,31 @@ func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	d.setTags(ctx, &config.TagsDataSourceModel, resp, localValues, localTagsKeyCase, localTagsValueCase)
+	replacedValues := make(map[string]string)
+	replacementMap, _ := framework.FromFrameworkMap[string](ctx, config.ReplacementMap)
+	//if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
+	for tagKey, tagValue := range localValues {
+		newTagKey := tagKey
+		newTagValue := tagValue
+		for old, newString := range replacementMap {
+			newTagKey = strings.ReplaceAll(newTagKey, old, newString)
+			newTagValue = strings.ReplaceAll(newTagValue, old, newString)
+		}
+		replacedValues[newTagKey] = newTagValue
+		replacedValues[tagKey] = newTagValue
+	}
+	//}
+
+	localValues = replacedValues
+	localValues["Name"] = replacedValues["Name"]
+	//localValues["Name"] = replacementMap["/"]
+
+	d.setTags(ctx, &config, resp, localValues, localTagsKeyCase, localTagsValueCase)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	d.setTagsList(ctx, &config.TagsDataSourceModel, resp, localValues, localTagsKeyCase, localTagsValueCase)
+	d.setTagsList(ctx, &config, resp, localValues, localTagsKeyCase, localTagsValueCase)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -124,16 +141,51 @@ func (d *GcpLabelsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (d *GcpLabelsDataSource) getLocalReplacements(config *GcpLabelsDataSourceModel, values map[string]string) map[string]string {
+func (d *GcpLabelsDataSource) setTags(ctx context.Context, config *GcpLabelsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
+	tags, errs := d.providerData.ProviderConfig.GetTags(localValues, localTagsKeyCase, localTagsValueCase)
+	d.handleValidationErrors(resp, errs)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	frameworkTags, diags := types.MapValueFrom(ctx, types.StringType, d.runReplaceOnTags(config, tags))
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	config.Tags = frameworkTags
+
+	tagsAsHash := mapHelpers.HashMap(tags)
+	config.Id = types.StringValue(tagsAsHash)
+}
+
+func (d *GcpLabelsDataSource) setTagsList(ctx context.Context, config *GcpLabelsDataSourceModel, resp *datasource.ReadResponse, localValues map[string]string, localTagsKeyCase, localTagsValueCase *cases.Case) {
+	tagsList, errs := d.providerData.ProviderConfig.GetTagsAsList(localValues, localTagsKeyCase, localTagsValueCase)
+	d.handleValidationErrors(resp, errs)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	frameworkTagsAsList, diags := types.ListValueFrom(ctx, types.MapType{ElemType: types.StringType}, tagsList)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	config.TagsAsList = frameworkTagsAsList
+}
+
+func (d *GcpLabelsDataSource) runReplaceOnTags(config *GcpLabelsDataSourceModel, values map[string]string) map[string]string {
 	replacedValues := make(map[string]string)
-	if !config.ReplacementMap.IsNull() {
+	if !config.ReplacementMap.IsNull() && !config.ReplacementMap.IsUnknown() {
 		for tagKey, tagValue := range values {
+			newTagKey := tagKey
+			newTagValue := tagValue
 			for old, newString := range config.ReplacementMap.Elements() {
-				replacedValues[strings.ReplaceAll(tagKey, old, newString.String())] = strings.ReplaceAll(tagValue, old, newString.String())
+				newTagKey = strings.ReplaceAll(newTagKey, old, newString.String())
+				newTagValue = strings.ReplaceAll(newTagValue, old, newString.String())
 			}
+			replacedValues[newTagKey] = newTagValue
 		}
 		return replacedValues
 	}
-
 	return values
 }
