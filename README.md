@@ -2,7 +2,11 @@
 
 <!-- markdownlint-disable -->
 # terraform-provider-context <a href="https://cpco.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content="><img align="right" src="https://cloudposse.com/logo-300x69.svg" width="150" /></a>
-<a href="https://github.com/cloudposse/terraform-provider-context/releases/latest"><img src="https://img.shields.io/github/release/cloudposse/terraform-provider-context.svg?style=for-the-badge" alt="Latest Release"/></a><a href="https://github.com/cloudposse/terraform-provider-context/commits"><img src="https://img.shields.io/github/last-commit/cloudposse/terraform-provider-context.svg?style=for-the-badge" alt="Last Updated"/></a><a href="https://slack.cloudposse.com"><img src="https://slack.cloudposse.com/for-the-badge.svg" alt="Slack Community"/></a>
+
+
+<a href="https://github.com/cloudposse/terraform-provider-context/releases/latest"><img src="https://img.shields.io/github/release/cloudposse/terraform-provider-context.svg?style=for-the-badge" alt="Latest Release"/></a><a href="https://github.com/cloudposse/terraform-provider-context/commits"><img src="https://img.shields.io/github/last-commit/cloudposse/terraform-provider-context.svg?style=for-the-badge" alt="Last Updated"/></a><a href="https://slack.cloudposse.com"><img src="https://slack.cloudposse.com/for-the-badge.svg" alt="Slack Community"/></a><a href="https://cloudposse.com/support/"><img src="https://img.shields.io/badge/Get_Support-success.svg?style=for-the-badge" alt="Get Support"/></a>
+
+
 <!-- markdownlint-restore -->
 
 <!--
@@ -37,7 +41,7 @@ be used to enable or disable a module, as well as generating consistent resource
 >
 > <details>
 > <summary><strong>Watch demo of using Atmos with Terraform</strong></summary>
-> <img src="https://github.com/cloudposse/atmos/blob/master/docs/demo.gif?raw=true"/><br/>
+> <img src="https://github.com/cloudposse/atmos/blob/main/docs/demo.gif?raw=true"/><br/>
 > <i>Example of running <a href="https://atmos.tools"><code>atmos</code></a> to manage infrastructure from our <a href="https://atmos.tools/quick-start/">Quick Start</a> tutorial.</i>
 > </detalis>
 
@@ -117,13 +121,16 @@ See the [Docs](./docs) for additional information.
 
 ## Examples
 
-
 Here are some additional examples:
 
 - [`examples/data-sources/config`](/examples/data-sources/config/)
 - [`examples/data-sources/label-delimited`](/examples/data-sources/label-delimited/)
 - [`examples/data-sources/label-templated`](/examples/data-sources/label-templated/)
 - [`examples/data-sources/tags`](/examples/data-sources/tags/)
+
+
+
+
 
 
 
@@ -145,9 +152,9 @@ For additional context, refer to some of these links.
 >
 > Use Cloud Posse's ready-to-go [terraform architecture blueprints](https://cloudposse.com/reference-architecture/) for AWS to get up and running quickly.
 >
-> ✅ We build it with you.<br/>
-> ✅ You own everything.<br/>
-> ✅ Your team wins.<br/>
+> ✅ We build it together with your team.<br/>
+> ✅ Your team owns everything.<br/>
+> ✅ 100% Open Source and backed by fanatical support.<br/>
 >
 > <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
 > <details><summary>📚 <strong>Learn More</strong></summary>
@@ -255,7 +262,7 @@ All other trademarks referenced herein are the property of their respective owne
 
 ## Copyrights
 
-Copyright © 2024-2024 [Cloud Posse, LLC](https://cloudposse.com)
+Copyright © 2024-2025 [Cloud Posse, LLC](https://cloudposse.com)
 
 
 
