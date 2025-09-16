@@ -42,3 +42,4 @@ website/vendor
 
 # Cloud Posse Build Harness
 .build-harness
+.atmos
