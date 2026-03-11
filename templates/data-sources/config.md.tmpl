@@ -1,0 +1,17 @@
+---
+page_title: "context_config Data Source - terraform-provider-context"
+subcategory: ""
+description: |-
+  Reads the current provider configuration as a data source.
+---
+
+# context_config (Data Source)
+
+Reads the current provider configuration as a data source. Use this to access provider-level settings such as the
+delimiter, enabled flag, properties, property order, and values from within your Terraform configuration.
+
+## Example Usage
+
+{{ tffile "examples/data-sources/config/data-source.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}

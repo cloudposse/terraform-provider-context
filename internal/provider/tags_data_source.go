@@ -45,7 +45,7 @@ func (d *TagsDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 func (d *TagsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Tags data source",
+		MarkdownDescription: "Generates a map of tags from the provider context values. Properties with `include_in_tags = true` (the default) are included. Tags are returned as both a map and a list of `{Key, Value}` objects. Case transformations can be applied to keys and values independently.",
 
 		Attributes: map[string]schema.Attribute{
 			"tags": schema.MapAttribute{

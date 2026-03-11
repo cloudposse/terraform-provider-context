@@ -40,7 +40,7 @@ func (d *LabelDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 func (d *LabelDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Label data source",
+		MarkdownDescription: "Generates a label string from the provider context. Supports two modes: **delimited** (joins property values with a delimiter) and **templated** (uses a Go template string like `{{.namespace}}/{{.environment}}/{{.name}}`). Override context values per label, enforce max length, and control character replacement.",
 
 		Attributes: map[string]schema.Attribute{
 			"delimiter": schema.StringAttribute{
