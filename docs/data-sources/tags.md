@@ -14,6 +14,14 @@ keys and values independently.
 ## Example Usage
 
 ```terraform
+terraform {
+  required_providers {
+    context = {
+      source = "registry.terraform.io/cloudposse/context"
+    }
+  }
+}
+
 provider "context" {
   delimiter       = "-"
   enabled         = true
