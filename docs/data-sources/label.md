@@ -27,7 +27,7 @@ terraform {
 
 provider "context" {
   delimiter = "~"
-  enabled   = false
+  enabled   = true
   properties = {
     namespace   = {}
     tenant      = {}
@@ -74,7 +74,7 @@ terraform {
 
 provider "context" {
   delimiter = "~"
-  enabled   = false
+  enabled   = true
   properties = {
     namespace   = {}
     tenant      = {}

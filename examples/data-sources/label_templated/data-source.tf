@@ -8,7 +8,7 @@ terraform {
 
 provider "context" {
   delimiter = "~"
-  enabled   = false
+  enabled   = true
   properties = {
     namespace   = {}
     tenant      = {}

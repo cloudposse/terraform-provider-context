@@ -222,10 +222,15 @@ See the [Docs](./docs) for additional information.
 
 Here are some additional examples:
 
-- [`examples/data-sources/config`](/examples/data-sources/config/)
-- [`examples/data-sources/label-delimited`](/examples/data-sources/label-delimited/)
-- [`examples/data-sources/label-templated`](/examples/data-sources/label-templated/)
-- [`examples/data-sources/tags`](/examples/data-sources/tags/)
+- [`examples/complete`](/examples/complete/) - End-to-end example with multiple labels, tags, and config introspection
+- [`examples/data-sources/config`](/examples/data-sources/config/) - Reading provider configuration
+- [`examples/data-sources/label_delimited`](/examples/data-sources/label_delimited/) - Delimited label generation
+- [`examples/data-sources/label_templated`](/examples/data-sources/label_templated/) - Templated label generation
+- [`examples/data-sources/label_max_length`](/examples/data-sources/label_max_length/) - Truncating labels to a maximum length
+- [`examples/data-sources/label_replace_chars`](/examples/data-sources/label_replace_chars/) - Stripping characters with regex
+- [`examples/data-sources/label_properties_subset`](/examples/data-sources/label_properties_subset/) - Using a subset of properties per label
+- [`examples/data-sources/tags`](/examples/data-sources/tags/) - Tag generation with case overrides and extra values
+- [`examples/data-sources/validation`](/examples/data-sources/validation/) - Property validation with regex, min/max length
 
 
 
