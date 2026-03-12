@@ -39,11 +39,11 @@ data "context_tags" "uppercase_keys" {
   tags_value_case = "upper"
 }
 
-# Add extra values that aren't part of the provider context
-data "context_tags" "with_extras" {
+# Override provider values for a specific use case
+data "context_tags" "with_overrides" {
   values = {
-    "cost_center" = "engineering"
-    "team"        = "platform"
+    environment = "Staging"
+    name        = "Worker"
   }
 }
 
@@ -62,7 +62,7 @@ output "tags_uppercase" {
   value       = data.context_tags.uppercase_keys.tags
 }
 
-output "tags_with_extras" {
-  description = "Tags with additional custom values merged in"
-  value       = data.context_tags.with_extras.tags
+output "tags_with_overrides" {
+  description = "Tags with overridden values"
+  value       = data.context_tags.with_overrides.tags
 }

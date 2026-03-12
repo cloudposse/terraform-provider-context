@@ -90,11 +90,11 @@ data "context_label" "truncated" {
 # Default tags with title-case keys
 data "context_tags" "default" {}
 
-# Tags with additional metadata merged in
-data "context_tags" "with_metadata" {
+# Tags with overridden values
+data "context_tags" "with_overrides" {
   values = {
-    managed_by = "terraform"
-    team       = "infrastructure"
+    environment = "staging"
+    name        = "api"
   }
 }
 
@@ -151,9 +151,9 @@ output "tags_as_list" {
   value       = data.context_tags.default.tags_as_list
 }
 
-output "tags_with_metadata" {
-  description = "Tags with extra metadata merged in"
-  value       = data.context_tags.with_metadata.tags
+output "tags_with_overrides" {
+  description = "Tags with overridden values"
+  value       = data.context_tags.with_overrides.tags
 }
 
 output "snake_case_tags" {
