@@ -150,13 +150,22 @@ usage: |-
 
   ### Using with Atmos
 
-  The context provider is designed to work with [Atmos](https://atmos.tools) for managing provider configuration
-  across environments. Atmos generates a `providers_override.tf.json` file that configures the provider automatically.
+  The context provider becomes incredibly powerful when combined with [Atmos](https://atmos.tools). Atmos uses
+  **imports and inheritance** to let you define your naming convention once at the organizational level, then
+  automatically override just the values that change per region, environment, or component — without repeating
+  any configuration.
+
+  Atmos generates a `providers_override.tf.json` file for each component, so your Terraform code never needs to
+  know how it was configured. Your components just declare an empty `provider "context" {}` block and everything
+  works.
 
   See the complete [demo-context](https://github.com/cloudposse/atmos/tree/main/examples/demo-context) example for a
   full working setup.
 
-  **Define provider properties and defaults in your stack configuration:**
+  #### 1. Define your naming convention once
+
+  Set the provider properties, validation rules, and organizational defaults in a single `_defaults.yaml`. Every
+  stack that imports this file inherits the full configuration.
 
   ```yaml
   # stacks/deploy/_defaults.yaml
@@ -190,29 +199,52 @@ usage: |-
           stack: "{{.atmos_stack}}"
   ```
 
-  **Override values per environment:**
+  #### 2. Use imports and inheritance to override per environment
+
+  Each environment stack imports the defaults and only specifies what changes. Atmos deep-merges the provider
+  configuration, so you never repeat the properties, validation rules, or organizational values.
+
+  ```yaml
+  # stacks/mixins/regions/us-west.yaml
+  terraform:
+    providers:
+      context:
+        values:
+          region: west
+  ```
 
   ```yaml
   # stacks/deploy/dev/myapp.yaml
   import:
     - ../_defaults
     - catalog/myapp
+    - mixins/regions/us-west
 
   terraform:
     providers:
       context:
         values:
           environment: dev
+          support_email: dev-support@acme.com
   ```
 
-  **In your component, declare an empty provider block** — Atmos fills in the configuration:
+  The result is a fully assembled provider configuration — the naming convention from `_defaults.yaml`, the region
+  from the mixin, and the environment from the stack file — all deep-merged automatically.
+
+  #### 3. Components stay clean
+
+  Your Terraform components declare an empty provider block. Atmos generates the `providers_override.tf.json` with
+  the fully resolved configuration.
 
   ```hcl
   # components/terraform/mycomponent/providers.tf
   provider "context" {}
   ```
 
-  **Use context values for Atmos stack naming:**
+  #### 4. Use context values for stack naming
+
+  Atmos can even use the context provider values to derive stack names, so naming is consistent across both your
+  infrastructure and your Atmos configuration.
 
   ```yaml
   # atmos.yaml
