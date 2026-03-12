@@ -40,6 +40,9 @@ website/vendor
 .envrc
 .direnv
 
+# Local dev overrides
+.terraformrc
+
 # Cloud Posse Build Harness
 .build-harness
 .atmos
