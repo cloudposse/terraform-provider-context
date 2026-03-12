@@ -30,8 +30,8 @@
 
 -->
 
-Terraform provider for managing a context. A context is a set of key-value pairs that can be used to enable or
-disable a module, as well as generating consistent resource names and tags for cloud resources.
+Terraform provider that defines your naming convention once and applies it everywhere — consistent resource names
+and tags across every module, without passing context maps around.
 
 
 > [!TIP]
@@ -48,19 +48,25 @@ disable a module, as well as generating consistent resource names and tags for c
 
 ## Introduction
 
-Terraform provider for managing a context. A context is a set of key-value pairs that can be used to enable or
-disable a module, as well as generating consistent resource names and tags for cloud resources.
+Naming things is one of the hardest problems in infrastructure. Without a programmatic naming convention,
+inconsistencies creep in across environments, teams, and modules. Resource names drift, tags are forgotten or
+misformatted, and what should be a simple convention becomes a source of constant cognitive load.
 
-This provider is intended to be a replacement for Cloud Posse's
-[terraform-null-label](https://github.com/cloudposse/terraform-null-label) Terraform module as well as the
-[context.tf](https://github.com/cloudposse/terraform-null-label/blob/main/exports/context.tf) export from that module,
-which is copied into all of Cloud Posse's modules and components (root modules) via automation.
+The best way to solve this is by defining a naming convention once and enforcing it everywhere. Cloud Posse proved
+this approach works with [terraform-null-label](https://github.com/cloudposse/terraform-null-label), which has been
+adopted in hundreds of modules. But `terraform-null-label` is opinionated about which properties make up a label
+(namespace, tenant, stage, environment, name), and passing the context between modules requires copying a
+[context.tf](https://github.com/cloudposse/terraform-null-label/blob/main/exports/context.tf) file into every module
+and threading a context map through every module call.
 
-The provider is designed to be more flexible and easier to use than the `terraform-null-label` module, and to provide
-a consistent way to manage context across all of Cloud Posse's modules and components via a provider, rather than a
-Terraform module. This provider also allows flexibility in the property names that can be used to generate labels and
-tags, where the previous module-based solution was limited to a fixed set of properties (namespace, tenant, stage,
-environment, name and attributes).
+This provider eliminates all of that. A Terraform provider has a persistent context that is automatically available
+to every module and sub-module within a root module — no passing variables, no copying files, no boilerplate.
+You configure the naming convention once in the provider block, and every `context_label` or `context_tags` data
+source anywhere in your configuration just works.
+
+Unlike `terraform-null-label`, this provider lets you define your own property names and validation rules, so you
+are not locked into a fixed schema. Use whatever properties make sense for your organization — `product`, `region`,
+`cost_center`, `team` — and the provider handles label generation, tag formatting, and value validation for you.
 
 ### Data Sources
 
@@ -73,6 +79,46 @@ The provider includes three data sources:
 - **`context_config`** — Reads the current provider configuration, useful for passing context to child modules.
 
 
+> [!TIP]
+> #### Use Terraform Reference Architectures for AWS
+>
+> Use Cloud Posse's ready-to-go [terraform architecture blueprints](https://cloudposse.com/reference-architecture/) for AWS to get up and running quickly.
+>
+> ✅ We build it together with your team.<br/>
+> ✅ Your team owns everything.<br/>
+> ✅ 100% Open Source and backed by fanatical support.<br/>
+>
+> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
+> <details><summary>📚 <strong>Learn More</strong></summary>
+>
+> <br/>
+>
+> Cloud Posse is the leading [**DevOps Accelerator**](https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support) for funded startups and enterprises.
+>
+> *Your team can operate like a pro today.*
+>
+> Ensure that your team succeeds by using Cloud Posse's proven process and turnkey blueprints. Plus, we stick around until you succeed.
+> #### Day-0:  Your Foundation for Success
+> - **Reference Architecture.** You'll get everything you need from the ground up built using 100% infrastructure as code.
+> - **Deployment Strategy.** Adopt a proven deployment strategy with GitHub Actions, enabling automated, repeatable, and reliable software releases.
+> - **Site Reliability Engineering.** Gain total visibility into your applications and services with Datadog, ensuring high availability and performance.
+> - **Security Baseline.** Establish a secure environment from the start, with built-in governance, accountability, and comprehensive audit logs, safeguarding your operations.
+> - **GitOps.** Empower your team to manage infrastructure changes confidently and efficiently through Pull Requests, leveraging the full power of GitHub Actions.
+>
+> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
+>
+> #### Day-2: Your Operational Mastery
+> - **Training.** Equip your team with the knowledge and skills to confidently manage the infrastructure, ensuring long-term success and self-sufficiency.
+> - **Support.** Benefit from a seamless communication over Slack with our experts, ensuring you have the support you need, whenever you need it.
+> - **Troubleshooting.** Access expert assistance to quickly resolve any operational challenges, minimizing downtime and maintaining business continuity.
+> - **Code Reviews.** Enhance your team’s code quality with our expert feedback, fostering continuous improvement and collaboration.
+> - **Bug Fixes.** Rely on our team to troubleshoot and resolve any issues, ensuring your systems run smoothly.
+> - **Migration Assistance.** Accelerate your migration process with our dedicated support, minimizing disruption and speeding up time-to-value.
+> - **Customer Workshops.** Engage with our team in weekly workshops, gaining insights and strategies to continuously improve and innovate.
+>
+> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
+> 
+</details>
 
 
 ## Usage
@@ -259,46 +305,6 @@ For additional context, refer to some of these links.
 
 
 
-> [!TIP]
-> #### Use Terraform Reference Architectures for AWS
->
-> Use Cloud Posse's ready-to-go [terraform architecture blueprints](https://cloudposse.com/reference-architecture/) for AWS to get up and running quickly.
->
-> ✅ We build it together with your team.<br/>
-> ✅ Your team owns everything.<br/>
-> ✅ 100% Open Source and backed by fanatical support.<br/>
->
-> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
-> <details><summary>📚 <strong>Learn More</strong></summary>
->
-> <br/>
->
-> Cloud Posse is the leading [**DevOps Accelerator**](https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support) for funded startups and enterprises.
->
-> *Your team can operate like a pro today.*
->
-> Ensure that your team succeeds by using Cloud Posse's proven process and turnkey blueprints. Plus, we stick around until you succeed.
-> #### Day-0:  Your Foundation for Success
-> - **Reference Architecture.** You'll get everything you need from the ground up built using 100% infrastructure as code.
-> - **Deployment Strategy.** Adopt a proven deployment strategy with GitHub Actions, enabling automated, repeatable, and reliable software releases.
-> - **Site Reliability Engineering.** Gain total visibility into your applications and services with Datadog, ensuring high availability and performance.
-> - **Security Baseline.** Establish a secure environment from the start, with built-in governance, accountability, and comprehensive audit logs, safeguarding your operations.
-> - **GitOps.** Empower your team to manage infrastructure changes confidently and efficiently through Pull Requests, leveraging the full power of GitHub Actions.
->
-> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
->
-> #### Day-2: Your Operational Mastery
-> - **Training.** Equip your team with the knowledge and skills to confidently manage the infrastructure, ensuring long-term success and self-sufficiency.
-> - **Support.** Benefit from a seamless communication over Slack with our experts, ensuring you have the support you need, whenever you need it.
-> - **Troubleshooting.** Access expert assistance to quickly resolve any operational challenges, minimizing downtime and maintaining business continuity.
-> - **Code Reviews.** Enhance your team’s code quality with our expert feedback, fostering continuous improvement and collaboration.
-> - **Bug Fixes.** Rely on our team to troubleshoot and resolve any issues, ensuring your systems run smoothly.
-> - **Migration Assistance.** Accelerate your migration process with our dedicated support, minimizing disruption and speeding up time-to-value.
-> - **Customer Workshops.** Engage with our team in weekly workshops, gaining insights and strategies to continuously improve and innovate.
->
-> <a href="https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/terraform-provider-context&utm_content=commercial_support"><img alt="Request Quote" src="https://img.shields.io/badge/request%20quote-success.svg?style=for-the-badge"/></a>
->
-</details>
 
 ## ✨ Contributing
 

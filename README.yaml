@@ -56,23 +56,29 @@ references:
 
 # Short description of this project
 description: |-
-  Terraform provider for managing a context. A context is a set of key-value pairs that can be used to enable or
-  disable a module, as well as generating consistent resource names and tags for cloud resources.
+  Terraform provider that defines your naming convention once and applies it everywhere — consistent resource names
+  and tags across every module, without passing context maps around.
 
 introduction: |-
-  Terraform provider for managing a context. A context is a set of key-value pairs that can be used to enable or
-  disable a module, as well as generating consistent resource names and tags for cloud resources.
+  Naming things is one of the hardest problems in infrastructure. Without a programmatic naming convention,
+  inconsistencies creep in across environments, teams, and modules. Resource names drift, tags are forgotten or
+  misformatted, and what should be a simple convention becomes a source of constant cognitive load.
 
-  This provider is intended to be a replacement for Cloud Posse's
-  [terraform-null-label](https://github.com/cloudposse/terraform-null-label) Terraform module as well as the
-  [context.tf](https://github.com/cloudposse/terraform-null-label/blob/main/exports/context.tf) export from that module,
-  which is copied into all of Cloud Posse's modules and components (root modules) via automation.
+  The best way to solve this is by defining a naming convention once and enforcing it everywhere. Cloud Posse proved
+  this approach works with [terraform-null-label](https://github.com/cloudposse/terraform-null-label), which has been
+  adopted in hundreds of modules. But `terraform-null-label` is opinionated about which properties make up a label
+  (namespace, tenant, stage, environment, name), and passing the context between modules requires copying a
+  [context.tf](https://github.com/cloudposse/terraform-null-label/blob/main/exports/context.tf) file into every module
+  and threading a context map through every module call.
 
-  The provider is designed to be more flexible and easier to use than the `terraform-null-label` module, and to provide
-  a consistent way to manage context across all of Cloud Posse's modules and components via a provider, rather than a
-  Terraform module. This provider also allows flexibility in the property names that can be used to generate labels and
-  tags, where the previous module-based solution was limited to a fixed set of properties (namespace, tenant, stage,
-  environment, name and attributes).
+  This provider eliminates all of that. A Terraform provider has a persistent context that is automatically available
+  to every module and sub-module within a root module — no passing variables, no copying files, no boilerplate.
+  You configure the naming convention once in the provider block, and every `context_label` or `context_tags` data
+  source anywhere in your configuration just works.
+
+  Unlike `terraform-null-label`, this provider lets you define your own property names and validation rules, so you
+  are not locked into a fixed schema. Use whatever properties make sense for your organization — `product`, `region`,
+  `cost_center`, `team` — and the provider handles label generation, tag formatting, and value validation for you.
 
   ### Data Sources
 
