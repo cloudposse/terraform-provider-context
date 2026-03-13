@@ -1,0 +1,29 @@
+---
+page_title: "context_tags Data Source - terraform-provider-context"
+subcategory: ""
+description: |-
+  Generates a map of tags from the provider context values.
+---
+
+# context_tags (Data Source)
+
+Generates a map of tags from the provider context values. Properties with `include_in_tags = true` (the default) are
+included. Tags are returned as both a map and a list of `{Key, Value}` objects. Case transformations can be applied to
+keys and values independently.
+
+## Example Usage
+
+{{ tffile "examples/data-sources/tags/data-source.tf" }}
+
+The output will be:
+
+```
+tags_map = {
+  "NAMESPACE"   = "ACME"
+  "environment" = "production"
+  "stage"       = "blue"
+  "Name"        = "WebApp"
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}

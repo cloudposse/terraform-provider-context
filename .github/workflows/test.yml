@@ -14,7 +14,6 @@ on:
     paths-ignore:
       - ".github/**"
       - "docs/**"
-      - "examples/**"
       - "test/**"
 
 # Testing only needs permissions to read the repository contents.
@@ -101,8 +100,57 @@ jobs:
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
 
+  # Run native Terraform tests (.tftest.hcl) against each example
+  terraform-test:
+    name: Terraform Example Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - examples/complete
+          - examples/provider
+          - examples/data-sources/config
+          - examples/data-sources/label_delimited
+          - examples/data-sources/label_templated
+          - examples/data-sources/label_max_length
+          - examples/data-sources/label_replace_chars
+          - examples/data-sources/label_properties_subset
+          - examples/data-sources/tags
+          - examples/data-sources/validation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: "1.9"
+          tofu_wrapper: false
+      - name: Build provider
+        run: go build -o terraform-provider-context .
+      - name: Configure dev overrides
+        run: |
+          cat > "${{ runner.temp }}/.terraformrc" <<EOF
+          provider_installation {
+          dev_overrides {
+          "cloudposse/context" = "${{ github.workspace }}"
+          "registry.terraform.io/cloudposse/context" = "${{ github.workspace }}"
+          }
+          direct {}
+          }
+          EOF
+      - name: Run terraform test
+        run: tofu test
+        working-directory: ${{ matrix.example }}
+        env:
+          TF_CLI_CONFIG_FILE: ${{ runner.temp }}/.terraformrc
+
   release:
-    needs: test
+    needs: [test, terraform-test]
     if: github.event_name == 'push'
     uses: cloudposse/.github/.github/workflows/shared-go-auto-release.yml@main
     with:

@@ -47,7 +47,7 @@ func (d *ConfigDataSource) Metadata(ctx context.Context, req datasource.Metadata
 func (d *ConfigDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Context Config data source",
+		MarkdownDescription: "Reads the current provider configuration as a data source. Use this to access provider-level settings such as the delimiter, enabled flag, properties, property order, and values from within your Terraform configuration.",
 		Attributes: map[string]schema.Attribute{
 			"delimiter": schema.StringAttribute{
 				MarkdownDescription: "Delimiter to use when creating the label from properties. Conflicts with `template`.",
