@@ -13,6 +13,17 @@ keys and values independently.
 
 ## Example Usage
 
-{{ tffile "examples/provider/provider.tf" }}
+{{ tffile "examples/data-sources/tags/data-source.tf" }}
+
+The output will be:
+
+```
+tags_map = {
+  "NAMESPACE"   = "ACME"
+  "environment" = "production"
+  "stage"       = "blue"
+  "Name"        = "WebApp"
+}
+```
 
 {{ .SchemaMarkdown | trimspace }}

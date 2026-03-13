@@ -18,10 +18,23 @@ specified by `property_order`.
 
 {{ tffile "examples/data-sources/label_delimited/data-source.tf" }}
 
+The output will be:
+
+```
+rendered = "cp~plat~dev~ue1~example"
+```
+
 ## Example Usage (Templated)
 
 In templated mode, a Go template string is used to format the label. Context values are available as template variables.
+This is useful when specific resources need names that break the pattern defined more globally.
 
 {{ tffile "examples/data-sources/label_templated/data-source.tf" }}
+
+The output will be:
+
+```
+rendered = "cp/plat/dev/example"
+```
 
 {{ .SchemaMarkdown | trimspace }}

@@ -155,9 +155,11 @@ usage: |-
   automatically override just the values that change per region, environment, or component — without repeating
   any configuration.
 
-  Atmos generates a `providers_override.tf.json` file for each component, so your Terraform code never needs to
-  know how it was configured. Your components just declare an empty `provider "context" {}` block and everything
-  works.
+  When a stack defines a `terraform.providers.context` block, Atmos generates a `providers_override.tf.json` file
+  for that component with the fully resolved configuration. This means that once you define your top-level stack
+  configuration for the context provider (organization-wide defaults, property definitions, validation rules),
+  individual components only need an empty `provider "context" {}` block in their Terraform code — the override
+  file supplies all the values automatically.
 
   See the complete [demo-context](https://github.com/cloudposse/atmos/tree/main/examples/demo-context) example for a
   full working setup.
@@ -165,7 +167,7 @@ usage: |-
   #### 1. Define your naming convention once
 
   Set the provider properties, validation rules, and organizational defaults in a single `_defaults.yaml`. Every
-  stack that imports this file inherits the full configuration.
+  stack that [imports](https://atmos.tools/core-concepts/stacks/imports) this file inherits the full configuration.
 
   ```yaml
   # stacks/deploy/_defaults.yaml
@@ -251,6 +253,28 @@ usage: |-
   stacks:
     name_template: "{{.providers.context.values.product}}-{{.providers.context.values.region}}-{{.providers.context.values.environment}}"
   ```
+
+  #### 5. Configure context per stack
+
+  To override context values for a specific stack (e.g. setting the environment or stage), add the values
+  under `terraform.providers.context.values` in that stack's YAML file:
+
+  ```yaml
+  # stacks/deploy/staging/myapp.yaml
+  import:
+    - ../_defaults
+    - catalog/myapp
+    - mixins/regions/us-west
+
+  terraform:
+    providers:
+      context:
+        values:
+          environment: staging
+          stage: green
+  ```
+
+  Atmos deep-merges this with the inherited defaults, so only the values that differ need to be specified.
 
   See the [Docs](./docs) for additional information.
 
